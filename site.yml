@@ -9,3 +9,5 @@
       when: ansible_distribution in ["Archlinux", "CachyOS"]
     - role: niri
       when: profile == "cachyos-niri"
+    - onepassword
+    - claude_code

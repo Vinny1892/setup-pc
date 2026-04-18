@@ -1,0 +1,53 @@
+---
+- name: Install 1Password (AUR)
+  ansible.builtin.shell: paru -S --noconfirm 1password
+  become: false
+  args:
+    creates: /usr/bin/1password
+  when: pkg_manager == "pacman"
+
+- name: Add 1Password apt repo key (Ubuntu/Debian)
+  ansible.builtin.shell: |
+    curl -sS https://downloads.1password.com/linux/keys/1password.asc \
+      | gpg --dearmor --output /usr/share/keyrings/1password-archive-keyring.gpg
+  args:
+    creates: /usr/share/keyrings/1password-archive-keyring.gpg
+  when: pkg_manager == "apt"
+
+- name: Add 1Password apt repo (Ubuntu/Debian)
+  ansible.builtin.apt_repository:
+    repo: "deb [arch=amd64 signed-by=/usr/share/keyrings/1password-archive-keyring.gpg] https://downloads.1password.com/linux/debian/amd64 stable main"
+    filename: 1password
+    state: present
+  when: pkg_manager == "apt"
+
+- name: Install 1Password (apt)
+  ansible.builtin.apt:
+    name: 1password
+    state: present
+    update_cache: true
+  when: pkg_manager == "apt"
+
+- name: Add 1Password rpm repo key (Fedora)
+  ansible.builtin.rpm_key:
+    key: https://downloads.1password.com/linux/keys/1password.asc
+    state: present
+  when: pkg_manager == "dnf"
+
+- name: Add 1Password dnf repo (Fedora)
+  ansible.builtin.yum_repository:
+    name: 1password
+    description: 1Password Stable Channel
+    baseurl: https://downloads.1password.com/linux/rpm/stable/x86_64
+    enabled: true
+    gpgcheck: true
+    repo_gpgcheck: true
+    gpgkey: https://downloads.1password.com/linux/keys/1password.asc
+    state: present
+  when: pkg_manager == "dnf"
+
+- name: Install 1Password (dnf)
+  ansible.builtin.dnf:
+    name: 1password
+    state: present
+  when: pkg_manager == "dnf"
