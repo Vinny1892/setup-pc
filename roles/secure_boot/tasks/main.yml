@@ -1,0 +1,71 @@
+---
+# Check current state before doing anything — drives all idempotency guards below
+- name: Check if sbctl keys already exist
+  ansible.builtin.stat:
+    path: /var/lib/sbctl/keys/db/db.key
+  register: sbctl_db_key
+
+- name: Create pre-setup snapshot
+  ansible.builtin.command: >
+    snapper -c {{ secure_boot_snapper_config }} create
+    --description "Before Secure Boot setup"
+  changed_when: true
+  when: not sbctl_db_key.stat.exists
+
+# Install
+- name: Install sbctl via pacman
+  community.general.pacman:
+    name: sbctl
+    state: present
+  when: pkg_manager == "pacman"
+
+- name: Install sbctl via apt
+  ansible.builtin.apt:
+    name: sbctl
+    state: present
+    update_cache: true
+  when: pkg_manager == "apt"
+
+- name: Install sbctl via dnf
+  ansible.builtin.dnf:
+    name: sbctl
+    state: present
+  when: pkg_manager == "dnf"
+
+# Key creation — skipped if keys already exist
+- name: Create Secure Boot keys
+  ansible.builtin.command: sbctl create-keys
+  changed_when: true
+  when: not sbctl_db_key.stat.exists
+
+# Enrollment guard — parse vendor_keys from sbctl status JSON
+# If vendor_keys is already "microsoft", enrollment is skipped entirely
+- name: Get sbctl status
+  ansible.builtin.command: sbctl status --json
+  register: secure_boot_status_result
+  changed_when: false
+
+- name: Set sbctl enrollment fact
+  ansible.builtin.set_fact:
+    secure_boot_vendor_keys: "{{ (secure_boot_status_result.stdout | from_json).vendor_keys | default('none') }}"
+
+- name: Enroll keys with Microsoft certificates
+  ansible.builtin.command: sbctl enroll-keys --microsoft
+  changed_when: true
+  when: secure_boot_vendor_keys != 'microsoft'
+
+# Sign and verify — sign-all is idempotent (safe to re-run)
+- name: Sign all boot binaries
+  ansible.builtin.command: sbctl sign-all
+  changed_when: true
+
+- name: Verify all signatures
+  ansible.builtin.command: sbctl verify
+  changed_when: false
+
+- name: Create post-setup snapshot
+  ansible.builtin.command: >
+    snapper -c {{ secure_boot_snapper_config }} create
+    --description "After Secure Boot setup - all signatures verified"
+  changed_when: true
+  when: not sbctl_db_key.stat.exists

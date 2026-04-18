@@ -1,0 +1,16 @@
+---
+galaxy_info:
+  author: "Vinicius Espindola"
+  description: "Enable Secure Boot using sbctl with Microsoft key compatibility"
+  license: "MIT"
+  min_ansible_version: "2.15"
+  platforms:
+    - name: Archlinux
+      versions:
+        - all
+  galaxy_tags:
+    - secure_boot
+    - uefi
+    - sbctl
+
+dependencies: []

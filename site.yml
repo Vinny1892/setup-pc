@@ -9,17 +9,17 @@
   vars:
     ansible_become_password: "{{ sudo_password }}"
   pre_tasks:
-    - name: Obter home real do usuário
+    - name: Get real user home directory
       ansible.builtin.shell: echo $HOME
       become: false
       register: real_home_result
       changed_when: false
 
-    - name: Definir variável real_user_home
+    - name: Set real_user_home variable
       ansible.builtin.set_fact:
         real_user_home: "{{ real_home_result.stdout }}"
 
-    - name: Criar askpass temporário para paru
+    - name: Create temporary askpass script for paru
       ansible.builtin.copy:
         content: "#!/bin/sh\necho '{{ sudo_password }}'\n"
         dest: /tmp/ansible-askpass.sh
@@ -53,8 +53,9 @@
     - shell_tools
     - vpn
     - gamepad
+    - secure_boot
   post_tasks:
-    - name: Remover askpass temporário
+    - name: Remove temporary askpass script
       ansible.builtin.file:
         path: /tmp/ansible-askpass.sh
         state: absent

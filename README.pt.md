@@ -16,6 +16,7 @@ Playbook Ansible para automatizar a configuração do sistema após uma reinstal
 - [MCP servers](#mcp-servers)
 - [Storage](#storage)
 - [VPN](#vpn)
+- [Secure Boot](#secure-boot)
 - [Niri — Keybinds](#niri--keybinds)
 - [tmux](#tmux)
 - [Comandos úteis](#comandos-úteis)
@@ -206,6 +207,25 @@ ansible-playbook site.yml -e grafana_url=https://myinstance.grafana.net -e grafa
   warp-cli register
   warp-cli connect
   ```
+
+---
+
+## Secure Boot
+
+Usa `sbctl` para enrollar chaves customizadas **junto** dos certificados Microsoft já presentes na firmware — sem resetar nada na BIOS e sem travar o BitLocker do Windows.
+
+| Etapa | O que acontece | Idempotente? |
+|---|---|---|
+| Criação das chaves | Cria chaves em `/var/lib/sbctl/keys/` | Pulado se já existirem |
+| Enrollment | Enrolla chaves custom + Microsoft na firmware | Pulado se `vendor_keys == microsoft` |
+| Sign all | Assina bootloader, kernel e UKI em `/boot` | Sempre roda (seguro re-rodar) |
+| Verify | Falha o play se algum binário não estiver assinado | Sempre roda |
+
+Snapshots do snapper são criados antes e depois do setup — apenas na primeira execução.
+
+Após o playbook terminar, habilite o Secure Boot na BIOS/UEFI em **User Mode** (não limpe nem resete as chaves).
+
+O pacman hook do `sbctl` assina os binários automaticamente em cada atualização de kernel ou systemd.
 
 ---
 

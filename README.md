@@ -16,6 +16,7 @@ Ansible playbook to automate system setup after a fresh install.
 - [MCP servers](#mcp-servers)
 - [Storage](#storage)
 - [VPN](#vpn)
+- [Secure Boot](#secure-boot)
 - [Niri — Keybinds](#niri--keybinds)
 - [tmux](#tmux)
 - [Useful commands](#useful-commands)
@@ -206,6 +207,25 @@ ansible-playbook site.yml -e grafana_url=https://myinstance.grafana.net -e grafa
   warp-cli register
   warp-cli connect
   ```
+
+---
+
+## Secure Boot
+
+Uses `sbctl` to enroll custom keys **alongside** the existing Microsoft certificates — no BIOS key reset required, and BitLocker on the Windows drive stays intact.
+
+| Step | What happens | Idempotent? |
+|---|---|---|
+| Key creation | Creates keys in `/var/lib/sbctl/keys/` | Skipped if keys exist |
+| Key enrollment | Enrolls custom + Microsoft keys into firmware | Skipped if `vendor_keys == microsoft` |
+| Sign all | Signs bootloader, kernel and UKI in `/boot` | Always runs (safe to re-run) |
+| Verify | Fails the play if any binary is unsigned | Always runs |
+
+Snapper snapshots are created before and after the setup — only on the first run.
+
+After the playbook completes, enable Secure Boot in BIOS/UEFI under **User Mode** (do not clear or reset keys).
+
+The `sbctl` pacman hook auto-signs binaries on every kernel or systemd update.
 
 ---
 
