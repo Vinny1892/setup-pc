@@ -1,0 +1,5 @@
+---
+profile: fedora
+pkg_manager: dnf
+
+extra_packages: []

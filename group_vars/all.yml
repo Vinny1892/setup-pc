@@ -1,0 +1,11 @@
+---
+# Pacotes instalados em todos os perfis
+common_packages:
+  - git
+  - curl
+  - wget
+  - htop
+  - fish
+
+# 1Password
+onepassword_install: true

@@ -1,0 +1,13 @@
+---
+- name: Install paru (AUR helper)
+  ansible.builtin.shell: |
+    cd /tmp && git clone https://aur.archlinux.org/paru.git && cd paru && makepkg -si --noconfirm
+  args:
+    creates: /usr/bin/paru
+  become: false
+
+- name: Install AUR packages via paru
+  ansible.builtin.shell: paru -S --noconfirm {{ item }}
+  loop: "{{ aur_packages | default([]) }}"
+  become: false
+  when: aur_packages is defined and aur_packages | length > 0

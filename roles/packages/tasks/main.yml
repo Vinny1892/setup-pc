@@ -1,0 +1,18 @@
+---
+- name: Install extra packages (pacman)
+  community.general.pacman:
+    name: "{{ extra_packages }}"
+    state: present
+  when: pkg_manager == "pacman" and extra_packages | length > 0
+
+- name: Install extra packages (apt)
+  ansible.builtin.apt:
+    name: "{{ extra_packages }}"
+    state: present
+  when: pkg_manager == "apt" and extra_packages | length > 0
+
+- name: Install extra packages (dnf)
+  ansible.builtin.dnf:
+    name: "{{ extra_packages }}"
+    state: present
+  when: pkg_manager == "dnf" and extra_packages | length > 0

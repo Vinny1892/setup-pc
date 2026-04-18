@@ -1,0 +1,6 @@
+---
+# Usa o config padrão do Niri que vem com o CachyOS
+- name: Ensure niri is installed
+  community.general.pacman:
+    name: niri
+    state: present

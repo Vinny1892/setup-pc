@@ -1,0 +1,11 @@
+---
+- name: Setup PC
+  hosts: all
+  become: true
+  roles:
+    - common
+    - packages
+    - role: aur
+      when: ansible_distribution in ["Archlinux", "CachyOS"]
+    - role: niri
+      when: profile == "cachyos-niri"

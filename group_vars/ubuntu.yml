@@ -1,0 +1,5 @@
+---
+profile: ubuntu
+pkg_manager: apt
+
+extra_packages: []

@@ -1,0 +1,7 @@
+---
+profile: archlinux
+pkg_manager: pacman
+aur_helper: paru
+
+extra_packages:
+  - 1password

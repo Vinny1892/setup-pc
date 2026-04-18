@@ -1,0 +1,3 @@
+---
+# Rodar: ansible-playbook -i inventory/cachyos-niri.yml site.yml
+- import_playbook: ../site.yml
