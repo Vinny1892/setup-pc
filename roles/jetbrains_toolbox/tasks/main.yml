@@ -1,9 +1,12 @@
 ---
 - name: Install JetBrains Toolbox (AUR)
-  ansible.builtin.shell: paru -S --noconfirm jetbrains-toolbox
+  kewlfft.aur.aur:
+    name: jetbrains-toolbox
+    use: paru
+    state: present
   become: false
-  args:
-    creates: /usr/bin/jetbrains-toolbox
+  environment:
+    SUDO_ASKPASS: /tmp/ansible-askpass.sh
   when: pkg_manager == "pacman"
 
 - name: Download JetBrains Toolbox installer (Ubuntu/Fedora)

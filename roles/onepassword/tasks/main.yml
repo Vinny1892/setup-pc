@@ -1,9 +1,12 @@
 ---
 - name: Install 1Password (AUR)
-  ansible.builtin.shell: paru -S --noconfirm 1password
+  kewlfft.aur.aur:
+    name: 1password
+    use: paru
+    state: present
   become: false
-  args:
-    creates: /usr/bin/1password
+  environment:
+    SUDO_ASKPASS: /tmp/ansible-askpass.sh
   when: pkg_manager == "pacman"
 
 - name: Add 1Password apt repo key (Ubuntu/Debian)

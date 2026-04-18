@@ -1,0 +1,18 @@
+---
+- name: Install mise (pacman)
+  community.general.pacman:
+    name: mise
+    state: present
+  when: pkg_manager == "pacman"
+
+- name: Check if mise is installed (non-pacman)
+  ansible.builtin.stat:
+    path: "{{ real_user_home }}/.local/bin/mise"
+  register: mise_bin
+  become: false
+  when: pkg_manager != "pacman"
+
+- name: Install mise (curl installer)
+  ansible.builtin.shell: curl -fsSL https://mise.run | sh
+  become: false
+  when: pkg_manager != "pacman" and not mise_bin.stat.exists

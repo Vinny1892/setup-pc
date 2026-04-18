@@ -1,7 +1,11 @@
 ---
-- name: Install Claude Code
-  ansible.builtin.shell: |
-    curl -fsSL https://claude.ai/install.sh | sh
+- name: Check if Claude Code is installed
+  ansible.builtin.stat:
+    path: "{{ real_user_home }}/.local/bin/claude"
+  register: claude_bin
   become: false
-  args:
-    creates: "{{ ansible_env.HOME }}/.local/bin/claude"
+
+- name: Install Claude Code
+  ansible.builtin.shell: curl -fsSL https://claude.ai/install.sh | sh
+  become: false
+  when: not claude_bin.stat.exists

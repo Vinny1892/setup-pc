@@ -2,16 +2,46 @@
 - name: Setup PC
   hosts: all
   become: true
+  vars_prompt:
+    - name: sudo_password
+      prompt: "Senha sudo"
+      private: true
+  vars:
+    ansible_become_password: "{{ sudo_password }}"
+  pre_tasks:
+    - name: Obter home real do usuário
+      ansible.builtin.shell: echo $HOME
+      become: false
+      register: real_home_result
+      changed_when: false
+
+    - name: Definir variável real_user_home
+      ansible.builtin.set_fact:
+        real_user_home: "{{ real_home_result.stdout }}"
+
+    - name: Criar askpass temporário para paru
+      ansible.builtin.copy:
+        content: "#!/bin/sh\necho '{{ sudo_password }}'\n"
+        dest: /tmp/ansible-askpass.sh
+        mode: '0755'
+        owner: "{{ ansible_facts['user_id'] }}"
+      no_log: true
   roles:
     - common
     - packages
     - role: aur
-      when: ansible_distribution in ["Archlinux", "CachyOS"]
+      when: ansible_facts['distribution'] in ["Archlinux", "CachyOS"]
     - role: niri
       when: profile == "cachyos-niri"
     - onepassword
     - claude_code
     - openclaude
-    - chrome
+    - chromium
     - antigravity
     - jetbrains_toolbox
+    - mise
+  post_tasks:
+    - name: Remover askpass temporário
+      ansible.builtin.file:
+        path: /tmp/ansible-askpass.sh
+        state: absent

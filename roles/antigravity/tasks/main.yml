@@ -1,12 +1,15 @@
 ---
 - name: Install Antigravity (AUR)
-  ansible.builtin.shell: paru -S --noconfirm antigravity
+  kewlfft.aur.aur:
+    name: antigravity
+    use: paru
+    state: present
   become: false
-  args:
-    creates: /usr/bin/antigravity
+  environment:
+    SUDO_ASKPASS: /tmp/ansible-askpass.sh
   when: pkg_manager == "pacman"
 
 - name: Antigravity not supported on this distro
   ansible.builtin.debug:
-    msg: "Antigravity só está disponível via AUR. Instale manualmente em {{ ansible_distribution }}."
+    msg: "Antigravity só está disponível via AUR. Instale manualmente em {{ ansible_facts['distribution'] }}."
   when: pkg_manager != "pacman"

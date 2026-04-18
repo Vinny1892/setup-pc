@@ -1,0 +1,19 @@
+---
+- name: Install Chromium (pacman)
+  community.general.pacman:
+    name: chromium
+    state: present
+  when: pkg_manager == "pacman"
+
+- name: Install Chromium (apt)
+  ansible.builtin.apt:
+    name: chromium
+    state: present
+    update_cache: true
+  when: pkg_manager == "apt"
+
+- name: Install Chromium (dnf)
+  ansible.builtin.dnf:
+    name: chromium
+    state: present
+  when: pkg_manager == "dnf"

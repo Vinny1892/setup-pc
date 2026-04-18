@@ -5,9 +5,15 @@
   args:
     creates: /usr/bin/paru
   become: false
+  environment:
+    SUDO_ASKPASS: /tmp/ansible-askpass.sh
 
 - name: Install AUR packages via paru
-  ansible.builtin.shell: paru -S --noconfirm {{ item }}
-  loop: "{{ aur_packages | default([]) }}"
+  kewlfft.aur.aur:
+    name: "{{ aur_packages }}"
+    use: paru
+    state: present
   become: false
+  environment:
+    SUDO_ASKPASS: /tmp/ansible-askpass.sh
   when: aur_packages is defined and aur_packages | length > 0

@@ -1,7 +1,11 @@
 ---
-- name: Install openclaude via npm
-  community.general.npm:
-    name: "@gitlawb/openclaude"
-    global: true
-    state: present
+- name: Check if openclaude is installed
+  ansible.builtin.stat:
+    path: "{{ real_user_home }}/.local/bin/openclaude"
+  register: openclaude_bin
   become: false
+
+- name: Install openclaude via npm (user prefix)
+  ansible.builtin.shell: npm install -g --prefix ~/.local @gitlawb/openclaude
+  become: false
+  when: not openclaude_bin.stat.exists
