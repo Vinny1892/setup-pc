@@ -6,6 +6,6 @@ common_packages:
   - wget
   - htop
   - fish
-
-# 1Password
-onepassword_install: true
+  - nodejs
+  - npm
+  - ripgrep

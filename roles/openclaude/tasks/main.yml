@@ -1,0 +1,7 @@
+---
+- name: Install openclaude via npm
+  community.general.npm:
+    name: "@gitlawb/openclaude"
+    global: true
+    state: present
+  become: false

@@ -11,3 +11,5 @@
       when: profile == "cachyos-niri"
     - onepassword
     - claude_code
+    - openclaude
+    - chrome
