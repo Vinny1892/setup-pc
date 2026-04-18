@@ -142,7 +142,6 @@ Substituições modernas de CLI com aliases configurados no fish:
 | `grep`   | ripgrep    |
 | `du`     | dust       |
 | `df`     | duf        |
-| `ps`     | procs      |
 | `top`    | bottom     |
 | `cd`     | zoxide     |
 | `lg`     | lazygit    |

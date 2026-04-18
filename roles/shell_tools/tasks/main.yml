@@ -56,7 +56,6 @@
       alias grep='rg'
       alias du='dust'
       alias df='duf'
-      alias ps='procs'
       alias top='btm'
       alias lg='lazygit'
       alias ldc='lazydocker'
