@@ -1,28 +1,30 @@
-# Setup PC — Documentação
+# Setup PC
 
-Playbook Ansible para automatizar a configuração do sistema após uma reinstalação.
+Ansible playbook to automate system setup after a fresh install.
 
-## Estrutura
+> [Versão em Português](README.pt.md)
+
+## Structure
 
 ```
 setup-pc/
-├── site.yml              # Playbook principal
-├── setup.sh              # Bootstrap (instala Ansible + collections)
+├── site.yml              # Main playbook
+├── setup.sh              # Bootstrap (installs Ansible + collections)
 ├── group_vars/
-│   ├── all.yml           # Pacotes comuns a todos os perfis
-│   ├── cachyos_niri.yml  # Pacotes específicos do CachyOS + Niri
+│   ├── all.yml           # Packages common to all profiles
+│   ├── cachyos_niri.yml  # CachyOS + Niri specific packages
 │   ├── archlinux.yml
 │   ├── ubuntu.yml
 │   └── fedora.yml
 └── roles/
-    ├── common/           # Shell, pacotes base, fish config
-    ├── packages/         # Instalação de extra_packages por distro
-    ├── aur/              # paru + pacotes AUR (Arch/CachyOS)
-    ├── niri/             # Keybinds do Niri
-    ├── theme/            # Tema GTK dark
-    ├── tmux/             # Config do tmux
-    ├── mise/             # Runtime manager (linguagens)
-    ├── dev_tools/        # Ferramentas de dev via mise
+    ├── common/           # Shell, base packages, fish config
+    ├── packages/         # extra_packages installation per distro
+    ├── aur/              # paru + AUR packages (Arch/CachyOS)
+    ├── niri/             # Niri keybinds
+    ├── theme/            # GTK dark theme
+    ├── tmux/             # tmux config
+    ├── mise/             # Runtime manager (languages)
+    ├── dev_tools/        # Dev tools via mise
     ├── onepassword/
     ├── claude_code/
     ├── openclaude/
@@ -32,16 +34,16 @@ setup-pc/
     └── jetbrains_toolbox/
 ```
 
-## Perfis suportados
+## Supported profiles
 
-| Perfil         | Distro             | Package manager |
-|----------------|--------------------|-----------------|
-| `cachyos-niri` | CachyOS            | pacman + paru   |
-| `archlinux`    | Arch Linux         | pacman + paru   |
-| `ubuntu`       | Ubuntu             | apt             |
-| `fedora`       | Fedora             | dnf             |
+| Profile        | Distro     | Package manager |
+|----------------|------------|-----------------|
+| `cachyos-niri` | CachyOS    | pacman + paru   |
+| `archlinux`    | Arch Linux | pacman + paru   |
+| `ubuntu`       | Ubuntu     | apt             |
+| `fedora`       | Fedora     | dnf             |
 
-## Como usar
+## Usage
 
 ### 1. Bootstrap
 
@@ -49,17 +51,17 @@ setup-pc/
 bash setup.sh
 ```
 
-Instala o `ansible-core` e as collections necessárias (`community.general`, `kewlfft.aur`).
+Installs `ansible-core` and required collections (`community.general`, `kewlfft.aur`).
 
-### 2. Rodar o playbook completo
+### 2. Run the full playbook
 
 ```sh
 ansible-playbook site.yml -i inventory/hosts
 ```
 
-Vai pedir a senha sudo no início.
+You will be prompted for your sudo password at the start.
 
-### 3. Rodar só as keybinds do Niri
+### 3. Apply only Niri keybinds
 
 ```sh
 ansible-playbook site.yml --tags keybinds
@@ -68,9 +70,9 @@ niri msg action load-config-file
 
 ---
 
-## Pacotes instalados
+## Installed packages
 
-### Todos os perfis (`group_vars/all.yml`)
+### All profiles (`group_vars/all.yml`)
 
 - git, curl, wget, htop
 - fish, nodejs, npm, ripgrep
@@ -80,192 +82,192 @@ niri msg action load-config-file
 
 ### CachyOS + Niri (`group_vars/cachyos_niri.yml`)
 
-**Pacman:** niri, 1password, wtype + build deps para PHP via mise  
+**Pacman:** niri, 1password, wtype + PHP build deps via mise  
 **AUR (paru):** slack-desktop
 
 ---
 
-## Ferramentas de dev (mise)
+## Dev tools (mise)
 
-Instaladas via `mise` em `~/.config/mise/config.toml`:
+Installed via `mise` at `~/.config/mise/config.toml`:
 
-| Ferramenta   | Versão   |
-|--------------|----------|
-| terraform    | latest   |
-| terragrunt   | latest   |
-| kubectl      | latest   |
-| helm         | latest   |
-| rust         | latest   |
-| go           | latest   |
-| java         | 21 (LTS) |
-| uv           | latest   |
-| php          | latest   |
+| Tool       | Version  |
+|------------|----------|
+| terraform  | latest   |
+| terragrunt | latest   |
+| kubectl    | latest   |
+| helm       | latest   |
+| rust       | latest   |
+| go         | latest   |
+| java       | 21 (LTS) |
+| uv         | latest   |
+| php        | latest   |
 
 ---
 
 ## Niri — Keybinds
 
-> `Mod` = tecla Super (Windows)
+> `Mod` = Super key (Windows key)
 
-### Aplicações
+### Applications
 
-| Atalho | Ação |
-|--------|------|
+| Shortcut | Action |
+|----------|--------|
 | `Mod+Return` | Terminal (Alacritty + tmux) |
 | `Mod+Ctrl+Return` | App launcher (noctalia) |
 | `Mod+B` | Chromium |
 | `Mod+E` | Nautilus (file manager) |
-| `Mod+Alt+L` | Bloquear tela |
+| `Mod+Alt+L` | Lock screen |
 | `Mod+Shift+Q` | Session menu |
 
-### Copiar / Colar
+### Copy / Paste
 
-| Atalho | Ação |
-|--------|------|
-| `Mod+C` | Copiar (universal) |
-| `Mod+V` | Colar (universal) |
+| Shortcut | Action |
+|----------|--------|
+| `Mod+C` | Copy (universal) |
+| `Mod+V` | Paste (universal) |
 
-> Dentro do tmux: `Mod+C` entra em copy mode. Seleciona com mouse ou `v`, depois `Mod+C` / `y` / `Enter` pra copiar.
+> Inside tmux: `Mod+C` enters copy mode. Select with mouse or `v`, then `Mod+C` / `y` / `Enter` to copy.
 
-### Janelas — Foco
+### Windows — Focus
 
-| Atalho | Ação |
-|--------|------|
-| `Mod+H/L` ou `Mod+←/→` | Foco coluna esquerda/direita |
-| `Mod+K/J` ou `Mod+↑/↓` | Foco janela acima/abaixo |
-| `Mod+Q` | Fechar janela |
+| Shortcut | Action |
+|----------|--------|
+| `Mod+H/L` or `Mod+←/→` | Focus column left/right |
+| `Mod+K/J` or `Mod+↑/↓` | Focus window up/down |
+| `Mod+Q` | Close window |
 
-### Janelas — Mover
+### Windows — Move
 
-| Atalho | Ação |
-|--------|------|
-| `Mod+Shift+←/→` | Mover coluna esquerda/direita |
-| `Mod+Shift+↑/↓` | Mover janela acima/abaixo |
-| `Mod+Ctrl+H/L` | Mover coluna esquerda/direita |
-| `Mod+Ctrl+K/J` | Mover janela acima/abaixo |
+| Shortcut | Action |
+|----------|--------|
+| `Mod+Shift+←/→` | Move column left/right |
+| `Mod+Shift+↑/↓` | Move window up/down |
+| `Mod+Ctrl+H/L` | Move column left/right |
+| `Mod+Ctrl+K/J` | Move window up/down |
 
-### Monitores
+### Monitors
 
-| Atalho | Ação |
-|--------|------|
-| `Mod+Ctrl+←/→` | Foco monitor esquerda/direita |
-| `Mod+Ctrl+↑/↓` | Foco monitor acima/abaixo |
-| `Mod+Shift+Ctrl+←/→/↑/↓` | Mover coluna para outro monitor |
+| Shortcut | Action |
+|----------|--------|
+| `Mod+Ctrl+←/→` | Focus monitor left/right |
+| `Mod+Ctrl+↑/↓` | Focus monitor up/down |
+| `Mod+Shift+Ctrl+←/→/↑/↓` | Move column to another monitor |
 
 ### Workspaces
 
-| Atalho | Ação |
-|--------|------|
-| `Mod+[1-9]` | Ir para workspace N |
-| `Mod+Shift+[1-9]` | Mover janela para workspace N |
-| `Mod+Tab` | Workspace anterior |
-| `Mod+Scroll` | Navegar workspaces |
+| Shortcut | Action |
+|----------|--------|
+| `Mod+[1-9]` | Go to workspace N |
+| `Mod+Shift+[1-9]` | Move window to workspace N |
+| `Mod+Tab` | Previous workspace |
+| `Mod+Scroll` | Navigate workspaces |
 
 ### Layout
 
-| Atalho | Ação |
-|--------|------|
-| `Mod+Shift+C` | Centralizar coluna |
-| `Mod+M` | Maximizar coluna |
-| `Mod+Ctrl+F` | Expandir coluna à largura disponível |
-| `Mod+Ctrl+C` | Centralizar colunas visíveis |
-| `Mod+Minus / Equal` | Reduzir / aumentar largura da coluna |
-| `Mod+Shift+Minus / Equal` | Reduzir / aumentar altura da janela |
+| Shortcut | Action |
+|----------|--------|
+| `Mod+Shift+C` | Center column |
+| `Mod+M` | Maximize column |
+| `Mod+Ctrl+F` | Expand column to available width |
+| `Mod+Ctrl+C` | Center visible columns |
+| `Mod+Minus / Equal` | Decrease / increase column width |
+| `Mod+Shift+Minus / Equal` | Decrease / increase window height |
 
-### Modos
+### Modes
 
-| Atalho | Ação |
-|--------|------|
+| Shortcut | Action |
+|----------|--------|
 | `Mod+F` | Fullscreen |
 | `Mod+T` | Floating |
-| `Mod+W` | Modo tabbed |
+| `Mod+W` | Tabbed mode |
 | `Mod+O` | Overview |
 
 ### Screenshots
 
-| Atalho | Ação |
-|--------|------|
-| `Ctrl+Shift+1` | Screenshot (seleção) |
-| `Ctrl+Shift+2` | Screenshot da tela |
-| `Ctrl+Shift+3` | Screenshot da janela |
+| Shortcut | Action |
+|----------|--------|
+| `Ctrl+Shift+1` | Screenshot (selection) |
+| `Ctrl+Shift+2` | Screenshot screen |
+| `Ctrl+Shift+3` | Screenshot window |
 
-### Sistema
+### System
 
-| Atalho | Ação |
-|--------|------|
+| Shortcut | Action |
+|----------|--------|
 | `Mod+Shift+Escape` | Hotkey overlay |
-| `Mod+Escape` | Desativar inibidor de atalhos |
-| `Mod+Shift+P` | Desligar monitores |
-| `Ctrl+Alt+Delete` | Sair do Niri |
+| `Mod+Escape` | Toggle keyboard shortcuts inhibitor |
+| `Mod+Shift+P` | Power off monitors |
+| `Ctrl+Alt+Delete` | Quit Niri |
 
 ---
 
 ## tmux
 
-**Prefix:** `Ctrl+Space` (alternativo: `Ctrl+B`)
+**Prefix:** `Ctrl+Space` (alternative: `Ctrl+B`)
 
 ### Panes
 
-| Atalho | Ação |
-|--------|------|
+| Shortcut | Action |
+|----------|--------|
 | `Prefix+h` | Split horizontal |
 | `Prefix+v` | Split vertical |
-| `Prefix+x` | Fechar pane |
-| `Ctrl+Alt+←/→/↑/↓` | Navegar entre panes |
-| `Ctrl+Alt+Shift+←/→/↑/↓` | Redimensionar pane |
+| `Prefix+x` | Close pane |
+| `Ctrl+Alt+←/→/↑/↓` | Navigate panes |
+| `Ctrl+Alt+Shift+←/→/↑/↓` | Resize pane |
 
-### Janelas
+### Windows
 
-| Atalho | Ação |
-|--------|------|
-| `Prefix+c` | Nova janela |
-| `Prefix+k` | Fechar janela |
-| `Prefix+r` | Renomear janela |
-| `Alt+[1-9]` | Ir para janela N |
-| `Alt+←/→` | Janela anterior/próxima |
-| `Alt+Shift+←/→` | Mover janela |
+| Shortcut | Action |
+|----------|--------|
+| `Prefix+c` | New window |
+| `Prefix+k` | Close window |
+| `Prefix+r` | Rename window |
+| `Alt+[1-9]` | Go to window N |
+| `Alt+←/→` | Previous/next window |
+| `Alt+Shift+←/→` | Move window |
 
-### Sessões
+### Sessions
 
-| Atalho | Ação |
-|--------|------|
-| `Prefix+C` | Nova sessão |
-| `Prefix+K` | Fechar sessão |
-| `Prefix+R` | Renomear sessão |
-| `Alt+↑/↓` | Navegar sessões |
+| Shortcut | Action |
+|----------|--------|
+| `Prefix+C` | New session |
+| `Prefix+K` | Close session |
+| `Prefix+R` | Rename session |
+| `Alt+↑/↓` | Navigate sessions |
 
 ### Copy mode (vi)
 
-| Atalho | Ação |
-|--------|------|
-| `Mod+C` / `Ctrl+Insert` | Entrar em copy mode |
-| `v` | Iniciar seleção |
-| `y` / `Enter` / `Mod+C` | Copiar para clipboard |
-| Mouse drag | Selecionar e copiar automaticamente |
+| Shortcut | Action |
+|----------|--------|
+| `Mod+C` / `Ctrl+Insert` | Enter copy mode |
+| `v` | Begin selection |
+| `y` / `Enter` / `Mod+C` | Copy to clipboard |
+| Mouse drag | Select and copy automatically |
 
-### Outros
+### Other
 
-| Atalho | Ação |
-|--------|------|
-| `Prefix+q` | Recarregar tmux.conf |
+| Shortcut | Action |
+|----------|--------|
+| `Prefix+q` | Reload tmux.conf |
 
 ---
 
-## Comandos úteis
+## Useful commands
 
-### Recarregar config do Niri
+### Reload Niri config
 
 ```sh
 niri msg action load-config-file
 ```
 
-### Recarregar config do tmux
+### Reload tmux config
 
 ```sh
 tmux source ~/.config/tmux/tmux.conf
 ```
 
-### Rodar só as keybinds via Ansible
+### Apply only keybinds via Ansible
 
 ```sh
 ansible-playbook site.yml --tags keybinds
