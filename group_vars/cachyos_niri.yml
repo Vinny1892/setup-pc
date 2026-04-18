@@ -6,3 +6,4 @@ aur_helper: paru
 extra_packages:
   - niri
   - 1password
+  - wtype

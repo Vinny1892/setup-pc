@@ -33,6 +33,8 @@
       when: ansible_facts['distribution'] in ["Archlinux", "CachyOS"]
     - role: niri
       when: profile == "cachyos-niri"
+    - role: theme
+      when: profile == "cachyos-niri"
     - onepassword
     - claude_code
     - openclaude

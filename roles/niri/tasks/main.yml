@@ -1,1 +1,18 @@
 ---
+- name: Remap center-column de Mod+C para Mod+Shift+C
+  ansible.builtin.lineinfile:
+    path: "{{ real_user_home }}/.config/niri/cfg/keybinds.kdl"
+    regexp: '^\s*Mod\+C\s*\{?\s*center-column'
+    line: '    Mod+Shift+C                         { center-column; }'
+    backrefs: false
+  become: false
+
+- name: Adicionar keybinds de copy-paste universal
+  ansible.builtin.blockinfile:
+    path: "{{ real_user_home }}/.config/niri/cfg/keybinds.kdl"
+    marker: "    // {mark} ANSIBLE MANAGED - universal copy-paste"
+    block: |
+          Mod+C { spawn "wtype" "-M" "ctrl" "-k" "Insert" "-m" "ctrl"; }
+          Mod+V { spawn "wtype" "-M" "shift" "-k" "Insert" "-m" "shift"; }
+    insertafter: 'Mod\+Shift\+C.*center-column'
+  become: false
