@@ -1,0 +1,14 @@
+---
+- name: Criar diretório ~/.config/tmux
+  ansible.builtin.file:
+    path: "{{ real_user_home }}/.config/tmux"
+    state: directory
+    mode: '0755'
+  become: false
+
+- name: Deploy tmux.conf
+  ansible.builtin.copy:
+    src: tmux.conf
+    dest: "{{ real_user_home }}/.config/tmux/tmux.conf"
+    mode: '0644'
+  become: false

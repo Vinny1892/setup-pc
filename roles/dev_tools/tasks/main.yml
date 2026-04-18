@@ -1,0 +1,29 @@
+---
+- name: Criar diretório de config do mise
+  ansible.builtin.file:
+    path: "{{ real_user_home }}/.config/mise"
+    state: directory
+    mode: '0755'
+  become: false
+
+- name: Configurar ferramentas globais no mise
+  ansible.builtin.copy:
+    dest: "{{ real_user_home }}/.config/mise/config.toml"
+    mode: '0644'
+    content: |
+      [tools]
+      terraform = "latest"
+      terragrunt = "latest"
+      kubectl = "latest"
+      helm = "latest"
+      rust = "latest"
+      go = "latest"
+      java = "21"
+      uv = "latest"
+      php = "latest"
+  become: false
+
+- name: Instalar ferramentas via mise
+  ansible.builtin.shell: mise install
+  become: false
+  changed_when: false

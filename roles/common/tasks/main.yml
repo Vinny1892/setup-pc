@@ -22,3 +22,12 @@
   ansible.builtin.user:
     name: "{{ ansible_facts['user_id'] }}"
     shell: /usr/bin/fish
+
+- name: Desativar greeting do fish (sobrescrever função do CachyOS)
+  ansible.builtin.blockinfile:
+    path: "{{ real_user_home }}/.config/fish/config.fish"
+    marker: "# {mark} ANSIBLE MANAGED - disable fish greeting"
+    block: |
+      function fish_greeting
+      end
+  become: false

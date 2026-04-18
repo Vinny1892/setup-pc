@@ -35,13 +35,16 @@
       when: profile == "cachyos-niri"
     - role: theme
       when: profile == "cachyos-niri"
+    - tmux
     - onepassword
     - claude_code
     - openclaude
     - chromium
+    - slack
     - antigravity
     - jetbrains_toolbox
     - mise
+    - dev_tools
   post_tasks:
     - name: Remover askpass temporário
       ansible.builtin.file:

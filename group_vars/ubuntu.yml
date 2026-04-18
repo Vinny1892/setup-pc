@@ -2,4 +2,27 @@
 profile: ubuntu
 pkg_manager: apt
 
-extra_packages: []
+extra_packages:
+  # build deps para PHP via mise
+  - autoconf
+  - bison
+  - build-essential
+  - gettext
+  - libgd-dev
+  - libcurl4-openssl-dev
+  - libedit-dev
+  - libicu-dev
+  - libjpeg-dev
+  - libmysqlclient-dev
+  - libonig-dev
+  - libpng-dev
+  - libpq-dev
+  - libreadline-dev
+  - libsqlite3-dev
+  - libssl-dev
+  - libxml2-dev
+  - libzip-dev
+  - openssl
+  - pkg-config
+  - re2c
+  - zlib1g-dev

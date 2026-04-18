@@ -11,3 +11,8 @@ common_packages:
   - ripgrep
   - distrobox
   - github-cli
+  - tmux
+  - wl-clipboard
+  - telegram-desktop
+  - discord
+  - steam

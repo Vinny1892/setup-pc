@@ -7,3 +7,23 @@ extra_packages:
   - niri
   - 1password
   - wtype
+  # build deps para PHP via mise
+  - base-devel
+  - re2c
+  - libxml2
+  - libpng
+  - libjpeg-turbo
+  - libzip
+  - oniguruma
+  - sqlite
+  - gd
+  - libedit
+  - icu
+  - mariadb-libs
+  - postgresql-libs
+  - readline
+  - openssl
+  - pkgconf
+
+aur_packages:
+  - slack-desktop
