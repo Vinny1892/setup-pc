@@ -1,5 +1,5 @@
 ---
-- name: Deploy keybinds.kdl customizado
+- name: Deploy custom keybinds.kdl
   ansible.builtin.copy:
     src: keybinds.kdl
     dest: "{{ real_user_home }}/.config/niri/cfg/keybinds.kdl"

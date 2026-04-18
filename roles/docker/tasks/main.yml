@@ -1,5 +1,5 @@
 ---
-- name: Instalar docker, lazygit e lazydocker (pacman)
+- name: Install docker, lazygit and lazydocker via pacman
   community.general.pacman:
     name:
       - docker
@@ -9,7 +9,7 @@
     state: present
   when: pkg_manager == "pacman"
 
-- name: Instalar docker e lazygit (apt)
+- name: Install docker and lazygit via apt
   ansible.builtin.apt:
     name:
       - docker.io
@@ -18,7 +18,7 @@
     state: present
   when: pkg_manager == "apt"
 
-- name: Instalar docker e lazygit (dnf)
+- name: Install docker and lazygit via dnf
   ansible.builtin.dnf:
     name:
       - docker
@@ -27,14 +27,14 @@
     state: present
   when: pkg_manager == "dnf"
 
-- name: Instalar lazydocker via go (apt/dnf)
+- name: Install lazydocker via go on apt/dnf systems
   ansible.builtin.shell: go install github.com/jesseduffield/lazydocker@latest
   become: false
   args:
     creates: "{{ real_user_home }}/go/bin/lazydocker"
   when: pkg_manager in ["apt", "dnf"]
 
-- name: Instalar kind via binário
+- name: Install kind via binary
   ansible.builtin.shell: |
     curl -Lo /usr/local/bin/kind \
       https://kind.sigs.k8s.io/dl/latest/kind-linux-amd64 && \
@@ -42,7 +42,7 @@
   args:
     creates: /usr/local/bin/kind
 
-- name: Instalar minikube via binário
+- name: Install minikube via binary
   ansible.builtin.shell: |
     curl -Lo /usr/local/bin/minikube \
       https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64 && \
@@ -50,13 +50,13 @@
   args:
     creates: /usr/local/bin/minikube
 
-- name: Ativar e iniciar docker
-  ansible.builtin.systemd:
+- name: Enable and start docker
+  ansible.builtin.systemd_service:
     name: docker
     enabled: true
     state: started
 
-- name: Adicionar usuário ao grupo docker
+- name: Add user to docker group
   ansible.builtin.user:
     name: "{{ ansible_facts['user_id'] }}"
     groups: docker

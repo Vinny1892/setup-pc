@@ -1,6 +1,6 @@
 ---
-# Ferramentas modernas de CLI
-- name: Instalar ferramentas de shell (pacman)
+# Modern CLI tools
+- name: Install shell tools via pacman
   community.general.pacman:
     name:
       - eza
@@ -19,7 +19,7 @@
     state: present
   when: pkg_manager == "pacman"
 
-- name: Instalar ferramentas de shell (apt)
+- name: Install shell tools via apt
   ansible.builtin.apt:
     name:
       - bat
@@ -31,7 +31,7 @@
     state: present
   when: pkg_manager == "apt"
 
-- name: Instalar ferramentas de shell (dnf)
+- name: Install shell tools via dnf
   ansible.builtin.dnf:
     name:
       - bat
@@ -43,8 +43,8 @@
     state: present
   when: pkg_manager == "dnf"
 
-# Aliases e inicialização no fish
-- name: Configurar aliases de ferramentas modernas no fish
+# Aliases and shell initialization
+- name: Configure modern tool aliases in fish shell
   ansible.builtin.blockinfile:
     path: "{{ real_user_home }}/.config/fish/config.fish"
     marker: "# {mark} ANSIBLE MANAGED - shell tools aliases"
@@ -66,26 +66,30 @@
   become: false
 
 # Git
-- name: Configurar delta como pager do git
+- name: Configure delta as git pager
   community.general.git_config:
     name: core.pager
     value: delta
     scope: global
+  become: false
 
-- name: Configurar delta side-by-side
+- name: Configure delta for side-by-side view
   community.general.git_config:
     name: delta.side-by-side
     value: "true"
     scope: global
+  become: false
 
-- name: Configurar delta como ferramenta de diff interativo
+- name: Configure delta as interactive diff tool
   community.general.git_config:
     name: interactive.diffFilter
     value: "delta --color-only"
     scope: global
+  become: false
 
-- name: Configurar estilo de merge zdiff3
+- name: Configure zdiff3 as merge conflict style
   community.general.git_config:
     name: merge.conflictstyle
     value: zdiff3
     scope: global
+  become: false

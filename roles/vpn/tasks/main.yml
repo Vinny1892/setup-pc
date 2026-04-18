@@ -1,25 +1,25 @@
 ---
 # WireGuard
-- name: Instalar wireguard-tools (pacman)
+- name: Install wireguard-tools via pacman
   community.general.pacman:
     name: wireguard-tools
     state: present
   when: pkg_manager == "pacman"
 
-- name: Instalar wireguard (apt)
+- name: Install wireguard via apt
   ansible.builtin.apt:
     name: wireguard
     state: present
   when: pkg_manager == "apt"
 
-- name: Instalar wireguard-tools (dnf)
+- name: Install wireguard-tools via dnf
   ansible.builtin.dnf:
     name: wireguard-tools
     state: present
   when: pkg_manager == "dnf"
 
 # Cloudflare WARP - Arch/CachyOS (AUR)
-- name: Instalar cloudflare-warp-bin via paru (Arch/CachyOS)
+- name: Install cloudflare-warp-bin via paru on Arch/CachyOS
   kewlfft.aur.aur:
     name: cloudflare-warp-bin
     use: paru
@@ -30,15 +30,16 @@
   when: pkg_manager == "pacman"
 
 # Cloudflare WARP - Ubuntu/Debian
-- name: Adicionar chave GPG do Cloudflare WARP (apt)
+- name: Add Cloudflare WARP GPG key for apt
   ansible.builtin.shell: |
     curl -fsSL https://pkg.cloudflareclient.com/pubkey.gpg | \
     gpg --yes --dearmor -o /usr/share/keyrings/cloudflare-warp-archive-keyring.gpg
   args:
     creates: /usr/share/keyrings/cloudflare-warp-archive-keyring.gpg
+  changed_when: true
   when: pkg_manager == "apt"
 
-- name: Adicionar repositório do Cloudflare WARP (apt)
+- name: Add Cloudflare WARP apt repository
   ansible.builtin.apt_repository:
     repo: >-
       deb [arch=amd64 signed-by=/usr/share/keyrings/cloudflare-warp-archive-keyring.gpg]
@@ -47,7 +48,7 @@
     state: present
   when: pkg_manager == "apt"
 
-- name: Instalar cloudflare-warp (apt)
+- name: Install cloudflare-warp via apt
   ansible.builtin.apt:
     name: cloudflare-warp
     state: present
@@ -55,22 +56,22 @@
   when: pkg_manager == "apt"
 
 # Cloudflare WARP - Fedora
-- name: Adicionar repositório do Cloudflare WARP (dnf)
+- name: Add Cloudflare WARP dnf repository
   ansible.builtin.get_url:
     url: https://pkg.cloudflareclient.com/cloudflare-warp-ascii.repo
     dest: /etc/yum.repos.d/cloudflare-warp.repo
     mode: '0644'
   when: pkg_manager == "dnf"
 
-- name: Instalar cloudflare-warp (dnf)
+- name: Install cloudflare-warp via dnf
   ansible.builtin.dnf:
     name: cloudflare-warp
     state: present
   when: pkg_manager == "dnf"
 
-# Ativar serviço do WARP
-- name: Ativar e iniciar warp-svc
-  ansible.builtin.systemd:
+# Enable WARP service
+- name: Enable and start warp-svc
+  ansible.builtin.systemd_service:
     name: warp-svc
     enabled: true
     state: started

@@ -1,12 +1,12 @@
 ---
-- name: Criar diretório de config do mise
+- name: Create mise configuration directory
   ansible.builtin.file:
     path: "{{ real_user_home }}/.config/mise"
     state: directory
     mode: '0755'
   become: false
 
-- name: Configurar ferramentas globais no mise
+- name: Configure global tools in mise
   ansible.builtin.copy:
     dest: "{{ real_user_home }}/.config/mise/config.toml"
     mode: '0644'
@@ -23,7 +23,7 @@
       php = "latest"
   become: false
 
-- name: Instalar ferramentas via mise
+- name: Install tools via mise
   ansible.builtin.shell: mise install
   become: false
   changed_when: false

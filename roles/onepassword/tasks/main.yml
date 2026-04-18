@@ -1,7 +1,9 @@
 ---
 - name: Install 1Password (AUR)
   kewlfft.aur.aur:
-    name: 1password
+    name:
+      - 1password
+      - 1password-cli
     use: paru
     state: present
   become: false
@@ -15,6 +17,7 @@
       | gpg --dearmor --output /usr/share/keyrings/1password-archive-keyring.gpg
   args:
     creates: /usr/share/keyrings/1password-archive-keyring.gpg
+  changed_when: true
   when: pkg_manager == "apt"
 
 - name: Add 1Password apt repo (Ubuntu/Debian)
@@ -26,7 +29,9 @@
 
 - name: Install 1Password (apt)
   ansible.builtin.apt:
-    name: 1password
+    name:
+      - 1password
+      - 1password-cli
     state: present
     update_cache: true
   when: pkg_manager == "apt"
@@ -51,6 +56,8 @@
 
 - name: Install 1Password (dnf)
   ansible.builtin.dnf:
-    name: 1password
+    name:
+      - 1password
+      - 1password-cli
     state: present
   when: pkg_manager == "dnf"

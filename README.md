@@ -105,7 +105,7 @@ niri msg action load-config-file
 
 ### CachyOS + Niri (`group_vars/cachyos_niri.yml`)
 
-**Pacman:** niri, 1password, wtype + PHP build deps via mise  
+**Pacman:** niri, 1password, 1password-cli, wtype + PHP build deps via mise  
 **AUR (paru):** slack-desktop
 
 ---
@@ -145,6 +145,7 @@ Modern CLI replacements configured with aliases in fish:
 | `cd`    | zoxide      |
 | `lg`    | lazygit     |
 | `ldc`   | lazydocker  |
+| `k`     | kubectl     |
 
 Also includes **Starship** prompt, **Atuin** (encrypted shell history) and **git-delta** (side-by-side diffs, `zdiff3` merge style).
 

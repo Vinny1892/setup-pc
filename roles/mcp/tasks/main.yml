@@ -1,5 +1,5 @@
 ---
-- name: Configurar MCP servers no ~/.claude/settings.json
+- name: Configure MCP servers in ~/.claude/settings.json
   ansible.builtin.shell: |
     jq '. * {
       "mcpServers": {

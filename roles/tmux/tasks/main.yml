@@ -1,5 +1,5 @@
 ---
-- name: Criar diretório ~/.config/tmux
+- name: Create tmux configuration directory
   ansible.builtin.file:
     path: "{{ real_user_home }}/.config/tmux"
     state: directory

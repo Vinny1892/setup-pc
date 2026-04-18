@@ -1,5 +1,5 @@
 ---
-- name: Criar diretórios GTK
+- name: Create GTK config directories
   ansible.builtin.file:
     path: "{{ real_user_home }}/.config/{{ item }}"
     state: directory
@@ -9,7 +9,7 @@
     - gtk-3.0
     - gtk-4.0
 
-- name: Configurar dark theme GTK 3
+- name: Configure dark theme for GTK 3
   ansible.builtin.copy:
     dest: "{{ real_user_home }}/.config/gtk-3.0/settings.ini"
     content: |
@@ -18,7 +18,7 @@
     mode: '0644'
   become: false
 
-- name: Configurar dark theme GTK 4
+- name: Configure dark theme for GTK 4
   ansible.builtin.copy:
     dest: "{{ real_user_home }}/.config/gtk-4.0/settings.ini"
     content: |
@@ -27,12 +27,12 @@
     mode: '0644'
   become: false
 
-- name: Configurar color-scheme via gsettings
+- name: Configure color scheme via gsettings
   ansible.builtin.shell: gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
   become: false
   changed_when: false
 
-- name: Configurar dark mode no Chromium
+- name: Configure dark mode for Chromium
   ansible.builtin.copy:
     dest: "{{ real_user_home }}/.config/chromium-flags.conf"
     content: |

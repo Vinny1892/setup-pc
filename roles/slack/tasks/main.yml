@@ -1,29 +1,29 @@
 ---
-- name: Instalar Slack (Ubuntu - via deb)
+- name: Install Slack on Ubuntu via deb
   when: pkg_manager == "apt"
   block:
-    - name: Adicionar chave GPG do Slack
+    - name: Add Slack GPG key
       ansible.builtin.get_url:
         url: https://packagecloud.io/slacktechnologies/slack/gpgkey
         dest: /etc/apt/keyrings/slack.asc
         mode: '0644'
 
-    - name: Adicionar repositório do Slack
+    - name: Add Slack apt repository
       ansible.builtin.apt_repository:
         repo: "deb [signed-by=/etc/apt/keyrings/slack.asc] https://packagecloud.io/slacktechnologies/slack/debian/ jessie main"
         filename: slack
         state: present
 
-    - name: Instalar slack-desktop
+    - name: Install slack-desktop
       ansible.builtin.apt:
         name: slack-desktop
         state: present
         update_cache: true
 
-- name: Instalar Slack (Fedora - via RPM)
+- name: Install Slack on Fedora via RPM
   when: pkg_manager == "dnf"
   block:
-    - name: Adicionar repositório do Slack
+    - name: Add Slack dnf repository
       ansible.builtin.yum_repository:
         name: slack
         description: Slack Repository
@@ -31,12 +31,12 @@
         gpgcheck: false
         enabled: true
 
-    - name: Instalar slack
+    - name: Install slack
       ansible.builtin.dnf:
         name: slack
         state: present
 
-- name: Instalar Slack (Arch - via AUR já tratado no cachyos_niri.yml)
+- name: Notify Slack on Arch is handled via AUR
   ansible.builtin.debug:
-    msg: "Slack no Arch é instalado via AUR (extra_packages)"
+    msg: "Slack on Arch is installed via AUR (extra_packages)"
   when: pkg_manager == "pacman"

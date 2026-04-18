@@ -14,5 +14,16 @@
 
 - name: Install mise (curl installer)
   ansible.builtin.shell: curl -fsSL https://mise.run | sh
+  register: mise_install
+  changed_when: mise_install.rc == 0
   become: false
   when: pkg_manager != "pacman" and not mise_bin.stat.exists
+
+- name: Activate mise in fish config
+  ansible.builtin.blockinfile:
+    path: "{{ real_user_home }}/.config/fish/config.fish"
+    marker: "# {mark} ANSIBLE MANAGED - mise activation"
+    block: |
+      mise activate fish | source
+    create: true
+  become: false

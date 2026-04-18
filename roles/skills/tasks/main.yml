@@ -1,19 +1,19 @@
 ---
-- name: Criar diretório ~/vinny
+- name: Create ~/vinny directory
   ansible.builtin.file:
     path: "{{ real_user_home }}/vinny"
     state: directory
     mode: '0755'
   become: false
 
-- name: Clonar repositório de skills
+- name: Clone skills repository
   ansible.builtin.git:
     repo: https://github.com/DiegoBulhoes/claude.git
     dest: "{{ real_user_home }}/vinny/skills"
     update: true
   become: false
 
-- name: Criar diretórios de skills e agents no Claude Code
+- name: Create skills and agents directories in Claude Code
   ansible.builtin.file:
     path: "{{ real_user_home }}/.claude/{{ item }}"
     state: directory
@@ -24,7 +24,7 @@
   become: false
 
 # Symlinks das skills (flattened — remove categoria, mantém só nome da skill)
-- name: Criar symlinks das skills em ~/.claude/skills/
+- name: Create symlinks for skills in ~/.claude/skills/
   ansible.builtin.file:
     src: "{{ real_user_home }}/vinny/skills/skills/{{ item.src }}"
     dest: "{{ real_user_home }}/.claude/skills/{{ item.name }}"
@@ -49,7 +49,7 @@
   become: false
 
 # Symlinks dos agents
-- name: Criar symlinks dos agents em ~/.claude/agents/
+- name: Create symlinks for agents in ~/.claude/agents/
   ansible.builtin.file:
     src: "{{ real_user_home }}/vinny/skills/agents/{{ item }}"
     dest: "{{ real_user_home }}/.claude/agents/{{ item }}"
