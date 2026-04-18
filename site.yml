@@ -28,6 +28,7 @@
       no_log: true
   roles:
     - common
+    - storage
     - packages
     - role: aur
       when: ansible_facts['distribution'] in ["Archlinux", "CachyOS"]
@@ -39,12 +40,18 @@
     - onepassword
     - claude_code
     - openclaude
+    - codex
+    - skills
+    - mcp
     - chromium
     - slack
     - antigravity
     - jetbrains_toolbox
     - mise
     - dev_tools
+    - docker
+    - shell_tools
+    - vpn
     - gamepad
   post_tasks:
     - name: Remover askpass temporário

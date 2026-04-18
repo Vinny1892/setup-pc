@@ -1,0 +1,63 @@
+---
+- name: Criar diretório ~/vinny
+  ansible.builtin.file:
+    path: "{{ real_user_home }}/vinny"
+    state: directory
+    mode: '0755'
+  become: false
+
+- name: Clonar repositório de skills
+  ansible.builtin.git:
+    repo: https://github.com/DiegoBulhoes/claude.git
+    dest: "{{ real_user_home }}/vinny/skills"
+    update: true
+  become: false
+
+- name: Criar diretórios de skills e agents no Claude Code
+  ansible.builtin.file:
+    path: "{{ real_user_home }}/.claude/{{ item }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - skills
+    - agents
+  become: false
+
+# Symlinks das skills (flattened — remove categoria, mantém só nome da skill)
+- name: Criar symlinks das skills em ~/.claude/skills/
+  ansible.builtin.file:
+    src: "{{ real_user_home }}/vinny/skills/skills/{{ item.src }}"
+    dest: "{{ real_user_home }}/.claude/skills/{{ item.name }}"
+    state: link
+    force: true
+  loop:
+    - { src: development/golang,        name: golang }
+    - { src: development/rust,          name: rust }
+    - { src: iac/ansible,               name: ansible }
+    - { src: iac/iac-review,            name: iac-review }
+    - { src: iac/terraform,             name: terraform }
+    - { src: iac/terragrunt,            name: terragrunt }
+    - { src: kubernetes/gitops,         name: gitops }
+    - { src: kubernetes/helm,           name: helm }
+    - { src: kubernetes/kubernetes,     name: kubernetes }
+    - { src: kubernetes/kustomize,      name: kustomize }
+    - { src: workflow/audit,            name: audit }
+    - { src: workflow/explore,          name: explore }
+    - { src: workflow/prd,              name: prd }
+    - { src: workflow/tech-spec,        name: tech-spec }
+    - { src: workflow/technical-docs,   name: technical-docs }
+  become: false
+
+# Symlinks dos agents
+- name: Criar symlinks dos agents em ~/.claude/agents/
+  ansible.builtin.file:
+    src: "{{ real_user_home }}/vinny/skills/agents/{{ item }}"
+    dest: "{{ real_user_home }}/.claude/agents/{{ item }}"
+    state: link
+    force: true
+  loop:
+    - ansible-expert.md
+    - cloud-troubleshooter.md
+    - spec-writer.md
+    - terraform-expert.md
+  become: false

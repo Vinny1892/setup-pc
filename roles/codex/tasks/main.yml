@@ -1,0 +1,11 @@
+---
+- name: Verificar se codex está instalado
+  ansible.builtin.stat:
+    path: "{{ real_user_home }}/.local/bin/codex"
+  register: codex_bin
+  become: false
+
+- name: Instalar codex via npm (user prefix)
+  ansible.builtin.shell: npm install -g --prefix ~/.local @openai/codex
+  become: false
+  when: not codex_bin.stat.exists

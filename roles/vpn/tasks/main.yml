@@ -1,0 +1,76 @@
+---
+# WireGuard
+- name: Instalar wireguard-tools (pacman)
+  community.general.pacman:
+    name: wireguard-tools
+    state: present
+  when: pkg_manager == "pacman"
+
+- name: Instalar wireguard (apt)
+  ansible.builtin.apt:
+    name: wireguard
+    state: present
+  when: pkg_manager == "apt"
+
+- name: Instalar wireguard-tools (dnf)
+  ansible.builtin.dnf:
+    name: wireguard-tools
+    state: present
+  when: pkg_manager == "dnf"
+
+# Cloudflare WARP - Arch/CachyOS (AUR)
+- name: Instalar cloudflare-warp-bin via paru (Arch/CachyOS)
+  kewlfft.aur.aur:
+    name: cloudflare-warp-bin
+    use: paru
+    state: present
+  become: false
+  environment:
+    SUDO_ASKPASS: /tmp/ansible-askpass.sh
+  when: pkg_manager == "pacman"
+
+# Cloudflare WARP - Ubuntu/Debian
+- name: Adicionar chave GPG do Cloudflare WARP (apt)
+  ansible.builtin.shell: |
+    curl -fsSL https://pkg.cloudflareclient.com/pubkey.gpg | \
+    gpg --yes --dearmor -o /usr/share/keyrings/cloudflare-warp-archive-keyring.gpg
+  args:
+    creates: /usr/share/keyrings/cloudflare-warp-archive-keyring.gpg
+  when: pkg_manager == "apt"
+
+- name: Adicionar repositório do Cloudflare WARP (apt)
+  ansible.builtin.apt_repository:
+    repo: >-
+      deb [arch=amd64 signed-by=/usr/share/keyrings/cloudflare-warp-archive-keyring.gpg]
+      https://pkg.cloudflareclient.com/ {{ ansible_distribution_release }} main
+    filename: cloudflare-client
+    state: present
+  when: pkg_manager == "apt"
+
+- name: Instalar cloudflare-warp (apt)
+  ansible.builtin.apt:
+    name: cloudflare-warp
+    state: present
+    update_cache: true
+  when: pkg_manager == "apt"
+
+# Cloudflare WARP - Fedora
+- name: Adicionar repositório do Cloudflare WARP (dnf)
+  ansible.builtin.get_url:
+    url: https://pkg.cloudflareclient.com/cloudflare-warp-ascii.repo
+    dest: /etc/yum.repos.d/cloudflare-warp.repo
+    mode: '0644'
+  when: pkg_manager == "dnf"
+
+- name: Instalar cloudflare-warp (dnf)
+  ansible.builtin.dnf:
+    name: cloudflare-warp
+    state: present
+  when: pkg_manager == "dnf"
+
+# Ativar serviço do WARP
+- name: Ativar e iniciar warp-svc
+  ansible.builtin.systemd:
+    name: warp-svc
+    enabled: true
+    state: started

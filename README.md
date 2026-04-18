@@ -11,6 +11,11 @@ Ansible playbook to automate system setup after a fresh install.
 - [Usage](#usage)
 - [Installed packages](#installed-packages)
 - [Dev tools (mise)](#dev-tools-mise)
+- [Shell tools](#shell-tools)
+- [AI tools](#ai-tools)
+- [MCP servers](#mcp-servers)
+- [Storage](#storage)
+- [VPN](#vpn)
 - [Niri — Keybinds](#niri--keybinds)
 - [tmux](#tmux)
 - [Useful commands](#useful-commands)
@@ -35,10 +40,17 @@ setup-pc/
     ├── theme/            # GTK dark theme
     ├── tmux/             # tmux config
     ├── mise/             # Runtime manager (languages)
-    ├── dev_tools/        # Dev tools via mise
+    ├── dev_tools/        # Dev tools via mise (terraform, kubectl, go, rust…)
+    ├── shell_tools/      # Modern CLI replacements + starship + atuin + git config
+    ├── storage/          # ZRAM, snapper snapshots, CoW disabled for docker/ollama
+    ├── docker/           # Docker, lazygit, lazydocker, kind, minikube
+    ├── vpn/              # WireGuard + Cloudflare WARP
+    ├── mcp/              # MCP servers (kubernetes, grafana, cloudflare)
+    ├── skills/           # Claude Code skills from DiegoBulhoes/claude
     ├── onepassword/
     ├── claude_code/
     ├── openclaude/
+    ├── codex/            # OpenAI Codex CLI
     ├── chromium/
     ├── slack/
     ├── antigravity/
@@ -113,6 +125,86 @@ Installed via `mise` at `~/.config/mise/config.toml`:
 | java       | 21 (LTS) |
 | uv         | latest   |
 | php        | latest   |
+
+---
+
+## Shell tools
+
+Modern CLI replacements configured with aliases in fish:
+
+| Classic | Replacement |
+|---------|-------------|
+| `ls`    | eza         |
+| `cat`   | bat         |
+| `find`  | fd          |
+| `grep`  | ripgrep     |
+| `du`    | dust        |
+| `df`    | duf         |
+| `ps`    | procs       |
+| `top`   | bottom      |
+| `cd`    | zoxide      |
+| `lg`    | lazygit     |
+| `ldc`   | lazydocker  |
+
+Also includes **Starship** prompt, **Atuin** (encrypted shell history) and **git-delta** (side-by-side diffs, `zdiff3` merge style).
+
+---
+
+## AI tools
+
+| Tool        | Install method | Purpose                     |
+|-------------|----------------|-----------------------------|
+| claude      | install script | Claude Code CLI             |
+| openclaude  | npm            | Claude API wrapper          |
+| codex       | npm            | OpenAI Codex CLI            |
+
+### Skills
+
+Cloned from [DiegoBulhoes/claude](https://github.com/DiegoBulhoes/claude) into `~/vinny/skills` and symlinked into `~/.claude/skills/` and `~/.claude/agents/`.
+
+| Category   | Skills                                              |
+|------------|-----------------------------------------------------|
+| IaC        | terraform, terragrunt, ansible, iac-review          |
+| Kubernetes | kubernetes, helm, kustomize, gitops                 |
+| Dev        | golang, rust                                        |
+| Workflow   | explore, audit, prd, tech-spec, technical-docs      |
+| Agents     | terraform-expert, ansible-expert, spec-writer, cloud-troubleshooter |
+
+---
+
+## MCP servers
+
+Configured in `~/.claude/settings.json`:
+
+| Server               | Transport | Notes                                  |
+|----------------------|-----------|----------------------------------------|
+| kubernetes-mcp-server | npx      | Read-only, uses `~/.kube/config`       |
+| grafana              | uvx       | Set `grafana_url` and `grafana_token`  |
+| cloudflare           | HTTP      | `https://mcp.cloudflare.com/mcp`       |
+
+To set Grafana credentials at runtime:
+```sh
+ansible-playbook site.yml -e grafana_url=https://myinstance.grafana.net -e grafana_token=<token>
+```
+
+---
+
+## Storage
+
+- **ZRAM**: 4GB compressed swap in RAM (zstd, priority 100) — used before any disk swap
+- **Snapper**: automatic Btrfs snapshots of `/` — 10 hourly, 7 daily, 1 weekly, 1 monthly, max 50 total
+- **CoW disabled**: `/var/lib/docker` and `/var/lib/ollama` use `chattr +C` to avoid Btrfs CoW overhead
+
+---
+
+## VPN
+
+- **WireGuard** (`wireguard-tools`) — tunnel config not included, add manually to `/etc/wireguard/`
+- **Cloudflare WARP** (`cloudflare-warp-bin`) — `warp-svc` enabled on boot; register once after install:
+  ```sh
+  warp-cli register
+  warp-cli connect
+  ```
 
 ---
 

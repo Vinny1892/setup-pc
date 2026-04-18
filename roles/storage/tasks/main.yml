@@ -1,0 +1,109 @@
+---
+# ZRAM
+- name: Instalar zram-generator (pacman)
+  community.general.pacman:
+    name: zram-generator
+    state: present
+  when: pkg_manager == "pacman"
+
+- name: Instalar zram-generator (apt)
+  ansible.builtin.apt:
+    name: systemd-zram-generator
+    state: present
+  when: pkg_manager == "apt"
+
+- name: Configurar zram-generator
+  ansible.builtin.template:
+    src: zram-generator.conf.j2
+    dest: /etc/systemd/zram-generator.conf
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Reiniciar zram
+
+- name: Ativar e iniciar zram0
+  ansible.builtin.systemd:
+    name: systemd-zram-setup@zram0.service
+    enabled: true
+    state: started
+    daemon_reload: true
+
+# Snapper
+- name: Instalar snapper e snap-pac (pacman)
+  community.general.pacman:
+    name:
+      - snapper
+      - snap-pac
+    state: present
+  when: pkg_manager == "pacman"
+
+- name: Instalar snapper (apt)
+  ansible.builtin.apt:
+    name: snapper
+    state: present
+  when: pkg_manager == "apt"
+
+- name: Instalar snapper (dnf)
+  ansible.builtin.dnf:
+    name: snapper
+    state: present
+  when: pkg_manager == "dnf"
+
+- name: Verificar se config root do snapper já existe
+  ansible.builtin.stat:
+    path: /etc/snapper/configs/root
+  register: snapper_root_config
+
+- name: Criar config root do snapper
+  ansible.builtin.command: snapper -c root create-config /
+  when: not snapper_root_config.stat.exists
+  changed_when: true
+
+- name: Configurar retenção de snapshots do snapper
+  ansible.builtin.lineinfile:
+    path: /etc/snapper/configs/root
+    regexp: "^{{ item.key }}="
+    line: "{{ item.key }}={{ item.value }}"
+  loop:
+    - { key: TIMELINE_CREATE,          value: '"yes"' }
+    - { key: TIMELINE_CLEANUP,         value: '"yes"' }
+    - { key: TIMELINE_LIMIT_HOURLY,    value: '"10"' }
+    - { key: TIMELINE_LIMIT_DAILY,     value: '"7"' }
+    - { key: TIMELINE_LIMIT_WEEKLY,    value: '"1"' }
+    - { key: TIMELINE_LIMIT_MONTHLY,   value: '"1"' }
+    - { key: TIMELINE_LIMIT_YEARLY,    value: '"0"' }
+    - { key: NUMBER_LIMIT,             value: '"50"' }
+    - { key: NUMBER_CLEANUP,           value: '"yes"' }
+
+- name: Ativar serviços do snapper
+  ansible.builtin.systemd:
+    name: "{{ item }}"
+    enabled: true
+    state: started
+  loop:
+    - snapper-timeline.timer
+    - snapper-cleanup.timer
+
+# CoW desabilitado para Docker e Ollama (btrfs)
+- name: Criar diretórios sem CoW para Docker e Ollama
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0710'
+  loop:
+    - /var/lib/docker
+    - /var/lib/ollama
+
+- name: Desabilitar Copy-on-Write no /var/lib/docker
+  ansible.builtin.command: chattr +C /var/lib/docker
+  register: chattr_docker
+  changed_when: chattr_docker.rc == 0
+  failed_when: false
+
+- name: Desabilitar Copy-on-Write no /var/lib/ollama
+  ansible.builtin.command: chattr +C /var/lib/ollama
+  register: chattr_ollama
+  changed_when: chattr_ollama.rc == 0
+  failed_when: false

@@ -1,0 +1,91 @@
+---
+# Ferramentas modernas de CLI
+- name: Instalar ferramentas de shell (pacman)
+  community.general.pacman:
+    name:
+      - eza
+      - bat
+      - fd
+      - ripgrep
+      - sd
+      - git-delta
+      - dust
+      - procs
+      - bottom
+      - duf
+      - zoxide
+      - starship
+      - atuin
+    state: present
+  when: pkg_manager == "pacman"
+
+- name: Instalar ferramentas de shell (apt)
+  ansible.builtin.apt:
+    name:
+      - bat
+      - fd-find
+      - ripgrep
+      - duf
+      - zoxide
+      - atuin
+    state: present
+  when: pkg_manager == "apt"
+
+- name: Instalar ferramentas de shell (dnf)
+  ansible.builtin.dnf:
+    name:
+      - bat
+      - fd-find
+      - ripgrep
+      - duf
+      - zoxide
+      - atuin
+    state: present
+  when: pkg_manager == "dnf"
+
+# Aliases e inicialização no fish
+- name: Configurar aliases de ferramentas modernas no fish
+  ansible.builtin.blockinfile:
+    path: "{{ real_user_home }}/.config/fish/config.fish"
+    marker: "# {mark} ANSIBLE MANAGED - shell tools aliases"
+    block: |
+      alias ls='eza --icons'
+      alias ll='eza -lah --icons --git'
+      alias cat='bat --paging=never'
+      alias find='fd'
+      alias grep='rg'
+      alias du='dust'
+      alias df='duf'
+      alias ps='procs'
+      alias top='btm'
+      alias lg='lazygit'
+      alias ldc='lazydocker'
+      zoxide init fish | source
+      atuin init fish | source
+      starship init fish | source
+  become: false
+
+# Git
+- name: Configurar delta como pager do git
+  community.general.git_config:
+    name: core.pager
+    value: delta
+    scope: global
+
+- name: Configurar delta side-by-side
+  community.general.git_config:
+    name: delta.side-by-side
+    value: "true"
+    scope: global
+
+- name: Configurar delta como ferramenta de diff interativo
+  community.general.git_config:
+    name: interactive.diffFilter
+    value: "delta --color-only"
+    scope: global
+
+- name: Configurar estilo de merge zdiff3
+  community.general.git_config:
+    name: merge.conflictstyle
+    value: zdiff3
+    scope: global

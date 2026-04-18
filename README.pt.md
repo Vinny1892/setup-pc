@@ -11,6 +11,11 @@ Playbook Ansible para automatizar a configuração do sistema após uma reinstal
 - [Como usar](#como-usar)
 - [Pacotes instalados](#pacotes-instalados)
 - [Ferramentas de dev (mise)](#ferramentas-de-dev-mise)
+- [Ferramentas de shell](#ferramentas-de-shell)
+- [Ferramentas de IA](#ferramentas-de-ia)
+- [MCP servers](#mcp-servers)
+- [Storage](#storage)
+- [VPN](#vpn)
 - [Niri — Keybinds](#niri--keybinds)
 - [tmux](#tmux)
 - [Comandos úteis](#comandos-úteis)
@@ -35,10 +40,17 @@ setup-pc/
     ├── theme/            # Tema GTK dark
     ├── tmux/             # Config do tmux
     ├── mise/             # Runtime manager (linguagens)
-    ├── dev_tools/        # Ferramentas de dev via mise
+    ├── dev_tools/        # Ferramentas de dev via mise (terraform, kubectl, go, rust…)
+    ├── shell_tools/      # Substituições modernas de CLI + starship + atuin + git config
+    ├── storage/          # ZRAM, snapshots snapper, CoW desabilitado para docker/ollama
+    ├── docker/           # Docker, lazygit, lazydocker, kind, minikube
+    ├── vpn/              # WireGuard + Cloudflare WARP
+    ├── mcp/              # MCP servers (kubernetes, grafana, cloudflare)
+    ├── skills/           # Skills do Claude Code (DiegoBulhoes/claude)
     ├── onepassword/
     ├── claude_code/
     ├── openclaude/
+    ├── codex/            # OpenAI Codex CLI
     ├── chromium/
     ├── slack/
     ├── antigravity/
@@ -113,6 +125,86 @@ Instaladas via `mise` em `~/.config/mise/config.toml`:
 | java         | 21 (LTS) |
 | uv           | latest   |
 | php          | latest   |
+
+---
+
+## Ferramentas de shell
+
+Substituições modernas de CLI com aliases configurados no fish:
+
+| Clássico | Substituto |
+|----------|------------|
+| `ls`     | eza        |
+| `cat`    | bat        |
+| `find`   | fd         |
+| `grep`   | ripgrep    |
+| `du`     | dust       |
+| `df`     | duf        |
+| `ps`     | procs      |
+| `top`    | bottom     |
+| `cd`     | zoxide     |
+| `lg`     | lazygit    |
+| `ldc`    | lazydocker |
+
+Inclui também **Starship** (prompt), **Atuin** (histórico encriptado) e **git-delta** (diffs side-by-side, merge style `zdiff3`).
+
+---
+
+## Ferramentas de IA
+
+| Ferramenta  | Instalação     | Função                      |
+|-------------|----------------|-----------------------------|
+| claude      | install script | Claude Code CLI             |
+| openclaude  | npm            | Wrapper da Claude API       |
+| codex       | npm            | OpenAI Codex CLI            |
+
+### Skills
+
+Clonadas de [DiegoBulhoes/claude](https://github.com/DiegoBulhoes/claude) em `~/vinny/skills` e symlinkadas em `~/.claude/skills/` e `~/.claude/agents/`.
+
+| Categoria  | Skills                                              |
+|------------|-----------------------------------------------------|
+| IaC        | terraform, terragrunt, ansible, iac-review          |
+| Kubernetes | kubernetes, helm, kustomize, gitops                 |
+| Dev        | golang, rust                                        |
+| Workflow   | explore, audit, prd, tech-spec, technical-docs      |
+| Agents     | terraform-expert, ansible-expert, spec-writer, cloud-troubleshooter |
+
+---
+
+## MCP servers
+
+Configurados em `~/.claude/settings.json`:
+
+| Server                | Transporte | Observações                              |
+|-----------------------|------------|------------------------------------------|
+| kubernetes-mcp-server | npx        | Read-only, usa `~/.kube/config`          |
+| grafana               | uvx        | Definir `grafana_url` e `grafana_token`  |
+| cloudflare            | HTTP       | `https://mcp.cloudflare.com/mcp`         |
+
+Para definir credenciais do Grafana:
+```sh
+ansible-playbook site.yml -e grafana_url=https://myinstance.grafana.net -e grafana_token=<token>
+```
+
+---
+
+## Storage
+
+- **ZRAM**: 4GB de swap comprimido na RAM (zstd, priority 100) — usado antes de qualquer swap em disco
+- **Snapper**: snapshots automáticos do Btrfs em `/` — 10 hourly, 7 daily, 1 weekly, 1 monthly, máx 50 total
+- **CoW desabilitado**: `/var/lib/docker` e `/var/lib/ollama` usam `chattr +C` para evitar overhead do CoW do Btrfs
+
+---
+
+## VPN
+
+- **WireGuard** (`wireguard-tools`) — config de tunnel não incluída, adicionar manualmente em `/etc/wireguard/`
+- **Cloudflare WARP** (`cloudflare-warp-bin`) — `warp-svc` habilitado no boot; registrar uma vez após instalar:
+  ```sh
+  warp-cli register
+  warp-cli connect
+  ```
 
 ---
 
