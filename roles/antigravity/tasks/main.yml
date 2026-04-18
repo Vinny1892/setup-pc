@@ -1,0 +1,12 @@
+---
+- name: Install Antigravity (AUR)
+  ansible.builtin.shell: paru -S --noconfirm antigravity
+  become: false
+  args:
+    creates: /usr/bin/antigravity
+  when: pkg_manager == "pacman"
+
+- name: Antigravity not supported on this distro
+  ansible.builtin.debug:
+    msg: "Antigravity só está disponível via AUR. Instale manualmente em {{ ansible_distribution }}."
+  when: pkg_manager != "pacman"

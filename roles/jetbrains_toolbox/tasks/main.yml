@@ -1,0 +1,18 @@
+---
+- name: Install JetBrains Toolbox (AUR)
+  ansible.builtin.shell: paru -S --noconfirm jetbrains-toolbox
+  become: false
+  args:
+    creates: /usr/bin/jetbrains-toolbox
+  when: pkg_manager == "pacman"
+
+- name: Download JetBrains Toolbox installer (Ubuntu/Fedora)
+  ansible.builtin.shell: |
+    TOOLBOX_URL=$(curl -s 'https://data.services.jetbrains.com/products/releases?code=TBA&latest=true&type=release' \
+      | python3 -c "import sys,json; d=json.load(sys.stdin); print(d['TBA'][0]['downloads']['linux']['link'])")
+    curl -fsSL "$TOOLBOX_URL" -o /tmp/jetbrains-toolbox.tar.gz
+    tar -xzf /tmp/jetbrains-toolbox.tar.gz -C /tmp
+    find /tmp -name 'jetbrains-toolbox' -type f -exec install -m755 {} /usr/local/bin/jetbrains-toolbox \;
+  args:
+    creates: /usr/local/bin/jetbrains-toolbox
+  when: pkg_manager != "pacman"
