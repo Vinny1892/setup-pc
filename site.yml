@@ -106,6 +106,9 @@
     - role: mcp
       tags: [ia]
 
+    - role: comfyui
+      tags: [ia]
+
     # --- gaming ---
     - role: gamepad
       tags: [gaming]

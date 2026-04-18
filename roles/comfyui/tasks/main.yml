@@ -1,0 +1,147 @@
+---
+# nvidia-container-toolkit required for distrobox --nvidia passthrough
+- name: Install nvidia-container-toolkit via AUR
+  kewlfft.aur.aur:
+    name: nvidia-container-toolkit
+    use: paru
+    state: present
+  become: false
+  environment:
+    SUDO_ASKPASS: /tmp/ansible-askpass.sh
+  when: pkg_manager == "pacman"
+
+- name: Install nvidia-container-toolkit via apt
+  ansible.builtin.apt:
+    name: nvidia-container-toolkit
+    state: present
+    update_cache: true
+  when: pkg_manager == "apt"
+
+- name: Install nvidia-container-toolkit via dnf
+  ansible.builtin.dnf:
+    name: nvidia-container-toolkit
+    state: present
+  when: pkg_manager == "dnf"
+
+# Directory structure on host — models dir is shared into the container automatically
+- name: Create ComfyUI directory structure
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+  become: false
+  loop:
+    - "{{ comfyui_app_dir }}"
+    - "{{ comfyui_models_dir }}/checkpoints"
+    - "{{ comfyui_models_dir }}/loras"
+    - "{{ comfyui_models_dir }}/vae"
+    - "{{ comfyui_models_dir }}/embeddings"
+    - "{{ comfyui_models_dir }}/controlnet"
+    - "{{ comfyui_models_dir }}/upscale_models"
+    - "{{ comfyui_models_dir }}/clip"
+    - "{{ comfyui_models_dir }}/diffusion_models"
+
+# Clone ComfyUI on the host — distrobox shares $HOME so it's visible inside
+- name: Clone ComfyUI repository
+  ansible.builtin.git:
+    repo: https://github.com/comfyanonymous/ComfyUI.git
+    dest: "{{ comfyui_app_dir }}"
+    update: true
+  become: false
+
+# Container lifecycle
+- name: Check if comfyui container exists
+  ansible.builtin.command: distrobox-list --no-color
+  register: comfyui_distrobox_list
+  changed_when: false
+  become: false
+
+- name: Create comfyui distrobox container
+  ansible.builtin.command: >
+    distrobox-create
+    --name {{ comfyui_container_name }}
+    --image {{ comfyui_image }}
+    --nvidia
+    --yes
+  become: false
+  when: comfyui_container_name not in comfyui_distrobox_list.stdout
+
+# First enter initializes the container (installs distrobox hooks)
+- name: Initialize comfyui container
+  ansible.builtin.shell: distrobox-enter --name {{ comfyui_container_name }} -- true
+  become: false
+  changed_when: false
+  when: comfyui_container_name not in comfyui_distrobox_list.stdout
+
+# Install Python + PyTorch inside the container
+- name: Install Python and PyTorch with CUDA inside container
+  ansible.builtin.shell: |
+    distrobox-enter --name {{ comfyui_container_name }} -- bash -c "
+      sudo apt-get update -qq &&
+      sudo apt-get install -y -qq python3 python3-pip python3-venv curl &&
+      python3 -m venv {{ comfyui_app_dir }}/venv &&
+      {{ comfyui_app_dir }}/venv/bin/pip install --quiet --upgrade pip &&
+      {{ comfyui_app_dir }}/venv/bin/pip install --quiet \
+        torch torchvision torchaudio \
+        --index-url https://download.pytorch.org/whl/{{ comfyui_cuda_version }} &&
+      {{ comfyui_app_dir }}/venv/bin/pip install --quiet \
+        -r {{ comfyui_app_dir }}/requirements.txt
+    "
+  become: false
+  args:
+    creates: "{{ comfyui_app_dir }}/venv/lib"
+
+# Point ComfyUI to the host models directory
+- name: Deploy extra_model_paths.yaml
+  ansible.builtin.copy:
+    dest: "{{ comfyui_app_dir }}/extra_model_paths.yaml"
+    mode: '0644'
+    content: |
+      comfyui:
+        base_path: {{ comfyui_models_dir }}
+        checkpoints: checkpoints/
+        loras: loras/
+        vae: vae/
+        embeddings: embeddings/
+        controlnet: controlnet/
+        upscale_models: upscale_models/
+        clip: clip/
+        diffusion_models: diffusion_models/
+  become: false
+
+# Launcher: starts ComfyUI inside distrobox, waits for server, opens Chromium fullscreen
+- name: Deploy ComfyUI launcher script
+  ansible.builtin.copy:
+    dest: "{{ real_user_home }}/.local/bin/comfyui-launch"
+    mode: '0755'
+    content: |
+      #!/usr/bin/env bash
+      set -e
+
+      PORT={{ comfyui_port }}
+      CONTAINER={{ comfyui_container_name }}
+      APP_DIR={{ comfyui_app_dir }}
+
+      echo "[comfyui] Starting server in distrobox..."
+      distrobox-enter --name "$CONTAINER" -- bash -c "
+        source $APP_DIR/venv/bin/activate &&
+        cd $APP_DIR &&
+        python main.py --listen 127.0.0.1 --port $PORT
+      " &
+
+      echo "[comfyui] Waiting for server on port $PORT..."
+      until curl -sf "http://127.0.0.1:$PORT" > /dev/null 2>&1; do
+        sleep 1
+      done
+
+      echo "[comfyui] Opening Chromium..."
+      chromium --fullscreen "http://127.0.0.1:$PORT"
+  become: false
+
+- name: Add comfyui alias to fish config
+  ansible.builtin.blockinfile:
+    path: "{{ real_user_home }}/.config/fish/config.fish"
+    marker: "# {mark} ANSIBLE MANAGED - comfyui alias"
+    block: |
+      alias comfyui='~/.local/bin/comfyui-launch'
+  become: false

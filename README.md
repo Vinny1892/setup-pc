@@ -191,6 +191,21 @@ Also includes **Starship** prompt, **Atuin** (encrypted shell history) and **git
 | claude      | install script | Claude Code CLI             |
 | openclaude  | npm            | Claude API wrapper          |
 | codex       | npm            | OpenAI Codex CLI            |
+| comfyui     | distrobox      | Stable Diffusion GUI (NVIDIA + CUDA) |
+
+### Skills
+
+### ComfyUI
+
+Runs inside a distrobox container (Ubuntu 24.04) with NVIDIA GPU passthrough. The host's `~/comfyui/models/` directory is shared into the container automatically.
+
+```sh
+comfyui   # starts server + opens Chromium fullscreen at http://127.0.0.1:8188
+```
+
+Model directories created at `~/comfyui/models/`: `checkpoints`, `loras`, `vae`, `embeddings`, `controlnet`, `upscale_models`, `clip`, `diffusion_models`.
+
+CUDA version is controlled by `comfyui_cuda_version` in `roles/comfyui/defaults/main.yml` (default: `cu124`).
 
 ### Skills
 

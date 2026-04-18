@@ -1,0 +1,17 @@
+---
+galaxy_info:
+  author: "Vinicius Espindola"
+  description: "ComfyUI via distrobox with NVIDIA GPU passthrough"
+  license: "MIT"
+  min_ansible_version: "2.15"
+  platforms:
+    - name: Archlinux
+      versions:
+        - all
+  galaxy_tags:
+    - comfyui
+    - ai
+    - diffusion
+    - distrobox
+
+dependencies: []
