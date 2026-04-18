@@ -4,6 +4,17 @@ Ansible playbook to automate system setup after a fresh install.
 
 > [Versão em Português](README.pt.md)
 
+## Table of Contents
+
+- [Structure](#structure)
+- [Supported profiles](#supported-profiles)
+- [Usage](#usage)
+- [Installed packages](#installed-packages)
+- [Dev tools (mise)](#dev-tools-mise)
+- [Niri — Keybinds](#niri--keybinds)
+- [tmux](#tmux)
+- [Useful commands](#useful-commands)
+
 ## Structure
 
 ```

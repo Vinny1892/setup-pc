@@ -4,6 +4,17 @@ Playbook Ansible para automatizar a configuração do sistema após uma reinstal
 
 > [English version](README.md)
 
+## Sumário
+
+- [Estrutura](#estrutura)
+- [Perfis suportados](#perfis-suportados)
+- [Como usar](#como-usar)
+- [Pacotes instalados](#pacotes-instalados)
+- [Ferramentas de dev (mise)](#ferramentas-de-dev-mise)
+- [Niri — Keybinds](#niri--keybinds)
+- [tmux](#tmux)
+- [Comandos úteis](#comandos-úteis)
+
 ## Estrutura
 
 ```
