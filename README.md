@@ -16,6 +16,7 @@ Ansible playbook to automate system setup after a fresh install.
 - [MCP servers](#mcp-servers)
 - [Storage](#storage)
 - [VPN](#vpn)
+- [Gaming](#gaming)
 - [Secure Boot](#secure-boot)
 - [Niri — Keybinds](#niri--keybinds)
 - [tmux](#tmux)
@@ -210,9 +211,44 @@ ansible-playbook site.yml -e grafana_url=https://myinstance.grafana.net -e grafa
 
 ---
 
+## Gaming
+
+| Package | Purpose |
+|---|---|
+| `proton-cachyos-slr` | CachyOS-optimized Proton for Steam games |
+| `umu-launcher` | Run Proton outside of Steam (GOG, Epic, etc.) |
+| `wine-cachyos-opt` | CachyOS-optimized Wine for Windows apps |
+| `winetricks` / `protontricks` | Wine/Proton prefix configuration |
+| `gamescope` | Valve Wayland micro-compositor for games |
+| `mangohud` + `lib32-mangohud` | FPS/GPU/CPU overlay (toggle: `Shift+F12`) |
+| `goverlay` | GUI to configure MangoHud |
+| `heroic-games-launcher-bin` | Epic Games and GOG launcher |
+| `lutris` | Multi-source game manager |
+| `vulkan-tools` | Vulkan diagnostics |
+
+MangoHud config is deployed to `~/.config/MangoHud/MangoHud.conf`.  
+Heroic version is controlled by `gaming_heroic_version` in `roles/gaming/defaults/main.yml`.
+
+---
+
 ## Secure Boot
 
-Uses `sbctl` to enroll custom keys **alongside** the existing Microsoft certificates — no BIOS key reset required, and BitLocker on the Windows drive stays intact.
+Uses `sbctl` to enroll custom keys **alongside** Microsoft certificates so that Windows/BitLocker on the second drive keeps working.
+
+### Required BIOS step before running the playbook
+
+`sbctl enroll-keys` requires the firmware to be in **Setup Mode** to write to the UEFI key database. This is a one-time prerequisite:
+
+1. Reboot into BIOS/UEFI
+2. Go to **Security → Secure Boot**
+3. Select **Delete Secure Boot Keys** (or "Reset to Setup Mode") — this temporarily clears the keys
+4. **Do not enable Secure Boot yet** — just save and boot back into Linux
+5. Run the playbook — it enrolls your custom keys + Microsoft certificates automatically
+6. Reboot into BIOS again and enable Secure Boot under **User Mode**
+
+> **BitLocker note**: clearing keys in step 3 does not break BitLocker. The `--microsoft` flag re-enrolls the same Microsoft certificates, so Windows boots normally after step 6.
+
+### What the playbook does
 
 | Step | What happens | Idempotent? |
 |---|---|---|
@@ -222,8 +258,6 @@ Uses `sbctl` to enroll custom keys **alongside** the existing Microsoft certific
 | Verify | Fails the play if any binary is unsigned | Always runs |
 
 Snapper snapshots are created before and after the setup — only on the first run.
-
-After the playbook completes, enable Secure Boot in BIOS/UEFI under **User Mode** (do not clear or reset keys).
 
 The `sbctl` pacman hook auto-signs binaries on every kernel or systemd update.
 

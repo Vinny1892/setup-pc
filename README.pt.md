@@ -16,6 +16,7 @@ Playbook Ansible para automatizar a configuração do sistema após uma reinstal
 - [MCP servers](#mcp-servers)
 - [Storage](#storage)
 - [VPN](#vpn)
+- [Gaming](#gaming)
 - [Secure Boot](#secure-boot)
 - [Niri — Keybinds](#niri--keybinds)
 - [tmux](#tmux)
@@ -210,9 +211,44 @@ ansible-playbook site.yml -e grafana_url=https://myinstance.grafana.net -e grafa
 
 ---
 
+## Gaming
+
+| Pacote | Função |
+|---|---|
+| `proton-cachyos-slr` | Proton otimizado pelo CachyOS para jogos Steam |
+| `umu-launcher` | Roda Proton fora do Steam (GOG, Epic, etc.) |
+| `wine-cachyos-opt` | Wine otimizado pelo CachyOS |
+| `winetricks` / `protontricks` | Configuração de prefixes Wine/Proton |
+| `gamescope` | Micro compositor Wayland da Valve |
+| `mangohud` + `lib32-mangohud` | Overlay de FPS/GPU/CPU (toggle: `Shift+F12`) |
+| `goverlay` | GUI para configurar o MangoHud |
+| `heroic-games-launcher-bin` | Launcher da Epic Games e GOG |
+| `lutris` | Gerenciador de jogos multi-plataforma |
+| `vulkan-tools` | Diagnóstico de Vulkan |
+
+A config do MangoHud é instalada em `~/.config/MangoHud/MangoHud.conf`.  
+A versão do Heroic é controlada pela variável `gaming_heroic_version` em `roles/gaming/defaults/main.yml`.
+
+---
+
 ## Secure Boot
 
-Usa `sbctl` para enrollar chaves customizadas **junto** dos certificados Microsoft já presentes na firmware — sem resetar nada na BIOS e sem travar o BitLocker do Windows.
+Usa `sbctl` para enrollar chaves customizadas **junto** dos certificados Microsoft para que o Windows/BitLocker no segundo disco continue funcionando normalmente.
+
+### Passo obrigatório na BIOS antes de rodar o playbook
+
+O `sbctl enroll-keys` exige que o firmware esteja em **Setup Mode** para conseguir escrever no banco de chaves da UEFI. É um pré-requisito único:
+
+1. Reinicia na BIOS/UEFI
+2. Vai em **Security → Secure Boot**
+3. Seleciona **Delete Secure Boot Keys** (ou "Reset to Setup Mode") — isso limpa as chaves temporariamente
+4. **Não habilita o Secure Boot ainda** — só salva e volta pro Linux
+5. Roda o playbook — ele enrolla suas chaves customizadas + certificados Microsoft automaticamente
+6. Reinicia na BIOS de novo e habilita o Secure Boot em **User Mode**
+
+> **Nota sobre BitLocker**: limpar as chaves no passo 3 não quebra o BitLocker. O flag `--microsoft` re-enrolla os mesmos certificados Microsoft, então o Windows continua bootando normalmente após o passo 6.
+
+### O que o playbook faz
 
 | Etapa | O que acontece | Idempotente? |
 |---|---|---|
@@ -222,8 +258,6 @@ Usa `sbctl` para enrollar chaves customizadas **junto** dos certificados Microso
 | Verify | Falha o play se algum binário não estiver assinado | Sempre roda |
 
 Snapshots do snapper são criados antes e depois do setup — apenas na primeira execução.
-
-Após o playbook terminar, habilite o Secure Boot na BIOS/UEFI em **User Mode** (não limpe nem resete as chaves).
 
 O pacman hook do `sbctl` assina os binários automaticamente em cada atualização de kernel ou systemd.
 
