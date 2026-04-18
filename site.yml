@@ -14,10 +14,12 @@
       become: false
       register: real_home_result
       changed_when: false
+      tags: [always]
 
     - name: Set real_user_home variable
       ansible.builtin.set_fact:
         real_user_home: "{{ real_home_result.stdout }}"
+      tags: [always]
 
     - name: Create temporary askpass script for paru
       ansible.builtin.copy:
@@ -26,36 +28,98 @@
         mode: '0755'
         owner: "{{ ansible_facts['user_id'] }}"
       no_log: true
+      tags: [always]
+
   roles:
-    - common
-    - storage
-    - packages
+    # --- base ---
+    - role: common
+      tags: [tools, cachyos, arch, ubuntu, fedora]
+
+    - role: storage
+      tags: [storage, cachyos, arch, ubuntu, fedora]
+
+    - role: packages
+      tags: [tools, cachyos, arch, ubuntu, fedora]
+
+    # --- distro: arch/cachyos ---
     - role: aur
+      tags: [cachyos, arch]
       when: ansible_facts['distribution'] in ["Archlinux", "CachyOS"]
+
+    # --- niri (cachyos-niri profile only) ---
     - role: niri
+      tags: [niri, cachyos]
       when: profile == "cachyos-niri"
+
     - role: theme
+      tags: [niri, cachyos]
       when: profile == "cachyos-niri"
-    - tmux
-    - onepassword
-    - claude_code
-    - openclaude
-    - codex
-    - skills
-    - mcp
-    - chromium
-    - slack
-    - antigravity
-    - jetbrains_toolbox
-    - mise
-    - dev_tools
-    - docker
-    - shell_tools
-    - vpn
-    - gamepad
-    - secure_boot
+
+    # --- tools ---
+    - role: tmux
+      tags: [tools]
+
+    - role: chromium
+      tags: [tools]
+
+    - role: slack
+      tags: [tools]
+
+    - role: antigravity
+      tags: [tools]
+
+    - role: onepassword
+      tags: [tools]
+
+    - role: shell_tools
+      tags: [tools]
+
+    - role: vpn
+      tags: [tools]
+
+    # --- devtools ---
+    - role: jetbrains_toolbox
+      tags: [devtools]
+
+    - role: mise
+      tags: [devtools]
+
+    - role: dev_tools
+      tags: [devtools]
+
+    - role: docker
+      tags: [devtools]
+
+    # --- ia ---
+    - role: claude_code
+      tags: [ia]
+
+    - role: openclaude
+      tags: [ia]
+
+    - role: codex
+      tags: [ia]
+
+    - role: skills
+      tags: [ia]
+
+    - role: mcp
+      tags: [ia]
+
+    # --- gaming ---
+    - role: gamepad
+      tags: [gaming]
+
+    - role: gaming
+      tags: [gaming]
+
+    # --- security ---
+    - role: secure_boot
+      tags: [security]
+
   post_tasks:
     - name: Remove temporary askpass script
       ansible.builtin.file:
         path: /tmp/ansible-askpass.sh
         state: absent
+      tags: [always]

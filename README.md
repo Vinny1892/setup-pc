@@ -86,7 +86,39 @@ ansible-playbook site.yml -i inventory/hosts
 
 You will be prompted for your sudo password at the start.
 
-### 3. Apply only Niri keybinds
+### 3. Run by context (tags)
+
+Each role is tagged so you can run only what you need:
+
+| Tag | What runs |
+|---|---|
+| `tools` | common, packages, shell_tools, tmux, chromium, slack, onepassword, vpn |
+| `devtools` | mise, dev_tools, docker, jetbrains_toolbox |
+| `ia` | claude_code, openclaude, codex, skills, mcp |
+| `gaming` | gaming, gamepad |
+| `security` | secure_boot |
+| `storage` | storage (ZRAM, snapper, CoW) |
+| `niri` | niri, theme |
+| `cachyos` | aur + all cachyos/arch roles |
+| `arch` | aur + base roles |
+| `ubuntu` | base roles (apt) |
+| `fedora` | base roles (dnf) |
+
+```sh
+# Install only AI tools
+ansible-playbook site.yml --tags ia
+
+# Install only gaming setup
+ansible-playbook site.yml --tags gaming
+
+# Install dev tools and shell tools
+ansible-playbook site.yml --tags devtools,tools
+
+# Run everything except gaming
+ansible-playbook site.yml --skip-tags gaming
+```
+
+### 4. Apply only Niri keybinds
 
 ```sh
 ansible-playbook site.yml --tags keybinds
