@@ -4,6 +4,8 @@ pkg_manager: pacman
 aur_helper: paru
 
 extra_packages:
+  - evince
+  - gnome-text-editor
   - niri
   - 1password
   - wtype
@@ -27,3 +29,6 @@ extra_packages:
 
 aur_packages:
   - slack-desktop
+
+gamepad_packages:
+  - xpadneo-dkms

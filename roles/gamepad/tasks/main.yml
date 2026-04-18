@@ -1,0 +1,12 @@
+---
+- name: Install gamepad packages
+  ansible.builtin.package:
+    name: "{{ gamepad_packages }}"
+    state: present
+  when: gamepad_packages is defined and gamepad_packages | length > 0
+
+- name: Load xpadneo module
+  community.general.modprobe:
+    name: hid-xpadneo
+    state: present
+  when: "'xpadneo-dkms' in (gamepad_packages | default([]))"

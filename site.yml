@@ -45,6 +45,7 @@
     - jetbrains_toolbox
     - mise
     - dev_tools
+    - gamepad
   post_tasks:
     - name: Remover askpass temporário
       ansible.builtin.file:
