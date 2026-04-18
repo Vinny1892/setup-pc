@@ -1,13 +1,11 @@
 ---
-- name: Instalar docker, lazygit, lazydocker, kind e minikube (pacman)
+- name: Instalar docker, lazygit e lazydocker (pacman)
   community.general.pacman:
     name:
       - docker
       - docker-compose
       - lazygit
       - lazydocker
-      - kind
-      - minikube
     state: present
   when: pkg_manager == "pacman"
 
@@ -29,30 +27,28 @@
     state: present
   when: pkg_manager == "dnf"
 
-- name: Instalar kind (apt/dnf)
-  ansible.builtin.shell: |
-    curl -Lo /usr/local/bin/kind \
-      https://kind.sigs.k8s.io/dl/latest/kind-linux-amd64 && \
-    chmod +x /usr/local/bin/kind
-  args:
-    creates: /usr/local/bin/kind
-  when: pkg_manager in ["apt", "dnf"]
-
-- name: Instalar minikube (apt/dnf)
-  ansible.builtin.shell: |
-    curl -Lo /usr/local/bin/minikube \
-      https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64 && \
-    chmod +x /usr/local/bin/minikube
-  args:
-    creates: /usr/local/bin/minikube
-  when: pkg_manager in ["apt", "dnf"]
-
 - name: Instalar lazydocker via go (apt/dnf)
   ansible.builtin.shell: go install github.com/jesseduffield/lazydocker@latest
   become: false
   args:
     creates: "{{ real_user_home }}/go/bin/lazydocker"
   when: pkg_manager in ["apt", "dnf"]
+
+- name: Instalar kind via binário
+  ansible.builtin.shell: |
+    curl -Lo /usr/local/bin/kind \
+      https://kind.sigs.k8s.io/dl/latest/kind-linux-amd64 && \
+    chmod +x /usr/local/bin/kind
+  args:
+    creates: /usr/local/bin/kind
+
+- name: Instalar minikube via binário
+  ansible.builtin.shell: |
+    curl -Lo /usr/local/bin/minikube \
+      https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64 && \
+    chmod +x /usr/local/bin/minikube
+  args:
+    creates: /usr/local/bin/minikube
 
 - name: Ativar e iniciar docker
   ansible.builtin.systemd:
