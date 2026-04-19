@@ -160,6 +160,12 @@ Installed via `mise` at `~/.config/mise/config.toml`:
 | uv         | latest   |
 | php        | latest   |
 
+Also installed via AUR:
+
+| Tool      | Purpose                  |
+|-----------|--------------------------|
+| freelens  | Kubernetes IDE (Lens fork) |
+
 ---
 
 ## Shell tools
@@ -197,15 +203,15 @@ Also includes **Starship** prompt, **Atuin** (encrypted shell history) and **git
 
 ### ComfyUI
 
-Runs inside a distrobox container (Ubuntu 24.04) with NVIDIA GPU passthrough. The host's `~/comfyui/models/` directory is shared into the container automatically.
+Runs inside a distrobox container (Arch Linux) with NVIDIA GPU passthrough. The image is built with `buildah` and has `python-pytorch-opt-cuda` + `python-torchvision-cuda` baked in. The host's `~/comfyui/models/` directory is shared into the container automatically.
 
 ```sh
-comfyui   # starts server + opens Chromium fullscreen at http://127.0.0.1:8188
+comfyui   # starts server + opens Chromium as PWA at http://127.0.0.1:8188
 ```
 
-Model directories created at `~/comfyui/models/`: `checkpoints`, `loras`, `vae`, `embeddings`, `controlnet`, `upscale_models`, `clip`, `diffusion_models`.
+Closing the Chromium window automatically stops the ComfyUI server. A `.desktop` entry is also created for launching from the system app launcher.
 
-CUDA version is controlled by `comfyui_cuda_version` in `roles/comfyui/defaults/main.yml` (default: `cu124`).
+Model directories created at `~/comfyui/models/`: `checkpoints`, `loras`, `vae`, `embeddings`, `controlnet`, `upscale_models`, `clip`, `diffusion_models`.
 
 ### Skills
 
@@ -318,7 +324,7 @@ The `sbctl` pacman hook auto-signs binaries on every kernel or systemd update.
 | Shortcut | Action |
 |----------|--------|
 | `Mod+Return` | Terminal (Alacritty + tmux) |
-| `Mod+Ctrl+Return` | App launcher (noctalia) |
+| `Mod+Space` | App launcher (noctalia) |
 | `Mod+B` | Chromium |
 | `Mod+E` | Nautilus (file manager) |
 | `Mod+Alt+L` | Lock screen |
