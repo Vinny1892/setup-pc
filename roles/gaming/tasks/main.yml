@@ -1,0 +1,150 @@
+---
+# TODO: evaluate adding a kernel_params role to manage boot parameters via
+# systemd-boot loader entry or /etc/kernel/cmdline. Candidates for gaming/AMD perf:
+#
+#   zswap.enabled=0              # disabled — using ZRAM instead
+#   nowatchdog                   # disable watchdog timers (latency)
+#   amd_pstate=guided            # AMD CPU power scaling (perf + efficiency balance)
+#   amd_prefcore=enable          # AMD preferred core scheduling
+#   amdgpu.vm_fragment_size=1    # GPU VM fragment size
+#   amdgpu.mes=1                 # enable Micro Engine Scheduler
+#   amdgpu.mes_kiq=1             # enable MES kernel interface queue
+#   amdgpu.no_system_mem_limit=1 # remove GPU system memory limit
+#   amdgpu.gttsize=126976        # GTT aperture size in MB (~124GB)
+#   ttm.pages_limit=32505856     # TTM memory page limit
+#   amd_iommu=pt                 # IOMMU passthrough (VM/GPU perf)
+#   mitigations=off              # disable CPU security mitigations — tradeoff: perf vs security
+#   nohibernate                  # disable hibernation
+#   io_delay=none                # remove legacy ISA I/O delay
+#   nvme_core.default_ps_max_latency_us=0  # disable NVMe power saving latency
+#   pcie_aspm=off                # disable PCIe Active State Power Management
+#   pcie_port_pm=off             # disable PCIe port power management
+#   rootflags=noatime,gc_merge,nodiscard,compress_chksum  # btrfs root mount flags
+#
+# Note: mitigations=off is aggressive — disables Spectre/Meltdown protections.
+# Only recommended on isolated gaming machines, not on systems with untrusted workloads.
+# Note: rootflags here duplicates what fstab already controls — verify before adding.
+
+# Core gaming packages via pacman (CachyOS-optimized builds where available)
+- name: Refresh pacman package database
+  community.general.pacman:
+    update_cache: true
+  when: pkg_manager == "pacman"
+
+- name: Install gaming packages via pacman
+  community.general.pacman:
+    name:
+      - proton-cachyos-slr     # CachyOS-optimized Proton
+      - umu-launcher           # Universal Proton launcher (runs Proton outside Steam)
+      - gamescope              # Valve Wayland micro-compositor for games
+      - mangohud               # FPS/GPU/CPU overlay
+      - lib32-mangohud         # 32-bit MangoHud support
+      - goverlay               # GUI to configure MangoHud
+      - wine-cachyos-opt       # CachyOS-optimized Wine build
+      - winetricks             # Wine prefix configuration helper
+      - protontricks           # Proton prefix configuration helper
+      - cabextract             # .cab extraction (required by winetricks)
+      - 7zip                   # Archive extraction (required by winetricks)
+      - vulkan-tools           # Vulkan diagnostics and info
+      - lutris                 # Multi-source game manager
+    state: present
+  when: pkg_manager == "pacman"
+
+- name: Install gaming packages via apt
+  ansible.builtin.apt:
+    name:
+      - gamescope
+      - mangohud
+      - wine
+      - winetricks
+      - cabextract
+      - p7zip-full
+      - vulkan-tools
+      - lutris
+    state: present
+    update_cache: true
+  when: pkg_manager == "apt"
+
+- name: Install gaming packages via dnf
+  ansible.builtin.dnf:
+    name:
+      - gamescope
+      - mangohud
+      - wine
+      - winetricks
+      - cabextract
+      - p7zip
+      - vulkan-tools
+      - lutris
+    state: present
+  when: pkg_manager == "dnf"
+
+# Heroic Games Launcher (Epic + GOG) — AUR on Arch, .deb/.rpm on others
+- name: Install Heroic Games Launcher via AUR
+  kewlfft.aur.aur:
+    name: heroic-games-launcher-bin
+    use: paru
+    state: present
+  become: false
+  environment:
+    SUDO_ASKPASS: /tmp/ansible-askpass.sh
+  when: pkg_manager == "pacman"
+
+- name: Download Heroic Games Launcher .deb
+  ansible.builtin.get_url:
+    url: "https://github.com/Heroic-Games-Launcher/HeroicGamesLauncher/releases/download/v{{ gaming_heroic_version }}/heroic_{{ gaming_heroic_version }}_amd64.deb"
+    dest: "/tmp/heroic_{{ gaming_heroic_version }}_amd64.deb"
+    mode: '0644'
+  when: pkg_manager == "apt"
+
+- name: Install Heroic Games Launcher .deb
+  ansible.builtin.apt:
+    deb: "/tmp/heroic_{{ gaming_heroic_version }}_amd64.deb"
+    state: present
+  when: pkg_manager == "apt"
+
+- name: Download Heroic Games Launcher .rpm
+  ansible.builtin.get_url:
+    url: "https://github.com/Heroic-Games-Launcher/HeroicGamesLauncher/releases/download/v{{ gaming_heroic_version }}/heroic-{{ gaming_heroic_version }}.x86_64.rpm"
+    dest: "/tmp/heroic-{{ gaming_heroic_version }}.x86_64.rpm"
+    mode: '0644'
+  when: pkg_manager == "dnf"
+
+- name: Install Heroic Games Launcher .rpm
+  ansible.builtin.dnf:
+    name: "/tmp/heroic-{{ gaming_heroic_version }}.x86_64.rpm"
+    state: present
+    disable_gpg_check: true
+  when: pkg_manager == "dnf"
+
+# protontricks is not packaged on apt/dnf — install via pipx
+- name: Install protontricks via pipx (apt/dnf)
+  ansible.builtin.shell: pipx install protontricks
+  become: false
+  changed_when: true
+  args:
+    creates: "{{ real_user_home }}/.local/bin/protontricks"
+  when: pkg_manager in ["apt", "dnf"]
+
+# MangoHud config directory
+- name: Create MangoHud config directory
+  ansible.builtin.file:
+    path: "{{ real_user_home }}/.config/MangoHud"
+    state: directory
+    mode: '0755'
+  become: false
+
+- name: Deploy MangoHud config
+  ansible.builtin.copy:
+    dest: "{{ real_user_home }}/.config/MangoHud/MangoHud.conf"
+    mode: '0644'
+    content: |
+      fps
+      gpu_stats
+      cpu_stats
+      ram
+      vram
+      frame_timing
+      position=top-left
+      toggle_hud=Shift_R+F12
+  become: false

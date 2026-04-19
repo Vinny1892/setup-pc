@@ -1,0 +1,23 @@
+---
+galaxy_info:
+  author: "Vinicius Espindola"
+  description: "Gaming setup: Proton, Wine, MangoHud, Gamescope, Heroic and Lutris"
+  license: "MIT"
+  min_ansible_version: "2.15"
+  platforms:
+    - name: Archlinux
+      versions:
+        - all
+    - name: Ubuntu
+      versions:
+        - noble
+    - name: Fedora
+      versions:
+        - "41"
+  galaxy_tags:
+    - gaming
+    - wine
+    - proton
+    - steam
+
+dependencies: []
