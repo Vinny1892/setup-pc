@@ -196,6 +196,14 @@
         --user-data-dir=/tmp/comfyui-chromium
   become: false
 
+- name: Download ComfyUI icon
+  ansible.builtin.get_url:
+    url: https://raw.githubusercontent.com/Comfy-Org/ComfyUI_frontend/main/public/assets/favicon.ico
+    dest: "{{ real_user_home }}/.local/share/icons/comfyui.ico"
+    mode: '0644'
+  become: false
+  failed_when: false
+
 - name: Deploy ComfyUI desktop entry
   ansible.builtin.copy:
     dest: "{{ real_user_home }}/.local/share/applications/comfyui.desktop"
@@ -204,7 +212,7 @@
       [Desktop Entry]
       Name=ComfyUI
       Exec=bash -c '{{ real_user_home }}/.local/bin/comfyui'
-      Icon=image-x-generic
+      Icon={{ real_user_home }}/.local/share/icons/comfyui.ico
       Type=Application
       Categories=Graphics;
       Terminal=false
