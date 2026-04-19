@@ -29,6 +29,7 @@ extra_packages:
 
 aur_packages:
   - slack-desktop
+  - freelens-bin
 
 gamepad_packages:
   - xpadneo-dkms
