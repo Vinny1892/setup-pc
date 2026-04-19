@@ -1,4 +1,29 @@
 ---
+- name: Install podman and buildah via pacman
+  community.general.pacman:
+    name:
+      - podman
+      - buildah
+    state: present
+  when: pkg_manager == "pacman"
+
+- name: Install podman and buildah via apt
+  ansible.builtin.apt:
+    name:
+      - podman
+      - buildah
+    state: present
+    update_cache: true
+  when: pkg_manager == "apt"
+
+- name: Install podman and buildah via dnf
+  ansible.builtin.dnf:
+    name:
+      - podman
+      - buildah
+    state: present
+  when: pkg_manager == "dnf"
+
 # nvidia-container-toolkit required for distrobox --nvidia passthrough
 - name: Install nvidia-container-toolkit via AUR
   kewlfft.aur.aur:
@@ -49,41 +74,65 @@
     update: true
   become: false
 
+# Build custom image with PyTorch baked in — skipped if image already exists
+- name: Check if comfyui image exists
+  ansible.builtin.command: buildah images --quiet localhost/{{ comfyui_container_name }}:latest
+  register: comfyui_image_check
+  changed_when: false
+  failed_when: false
+  become: false
+
+- name: Deploy Containerfile for comfyui image
+  ansible.builtin.copy:
+    dest: "{{ comfyui_dir }}/Containerfile"
+    mode: '0644'
+    content: |
+      FROM archlinux:latest
+      RUN pacman -Sy --noconfirm --needed \
+            python python-pip \
+            python-pytorch-opt-cuda \
+            python-torchvision-cuda \
+            curl && \
+          pacman -Scc --noconfirm
+  become: false
+  when: comfyui_image_check.stdout == ""
+
+- name: Build comfyui image with buildah
+  ansible.builtin.command: buildah bud -t localhost/{{ comfyui_container_name }}:latest {{ comfyui_dir }}
+  become: false
+  when: comfyui_image_check.stdout == ""
+
 # Container lifecycle
 - name: Check if comfyui container exists
   ansible.builtin.command: distrobox-list --no-color
   register: comfyui_distrobox_list
   changed_when: false
+  failed_when: false
   become: false
 
 - name: Create comfyui distrobox container
   ansible.builtin.command: >
     distrobox-create
     --name {{ comfyui_container_name }}
-    --image {{ comfyui_image }}
+    --image localhost/{{ comfyui_container_name }}:latest
     --nvidia
     --yes
   become: false
-  when: comfyui_container_name not in comfyui_distrobox_list.stdout
+  when: comfyui_container_name not in (comfyui_distrobox_list.stdout | default(''))
 
-# First enter initializes the container (installs distrobox hooks)
+# First enter initializes the container (installs distrobox hooks inside)
 - name: Initialize comfyui container
   ansible.builtin.shell: distrobox-enter --name {{ comfyui_container_name }} -- true
   become: false
   changed_when: false
-  when: comfyui_container_name not in comfyui_distrobox_list.stdout
+  when: comfyui_container_name not in (comfyui_distrobox_list.stdout | default(''))
 
-# Install Python + PyTorch inside the container
-- name: Install Python and PyTorch with CUDA inside container
+# Install ComfyUI Python deps inside container using system PyTorch
+- name: Install ComfyUI requirements inside container
   ansible.builtin.shell: |
     distrobox-enter --name {{ comfyui_container_name }} -- bash -c "
-      sudo apt-get update -qq &&
-      sudo apt-get install -y -qq python3 python3-pip python3-venv curl &&
-      python3 -m venv {{ comfyui_app_dir }}/venv &&
+      python -m venv --system-site-packages {{ comfyui_app_dir }}/venv &&
       {{ comfyui_app_dir }}/venv/bin/pip install --quiet --upgrade pip &&
-      {{ comfyui_app_dir }}/venv/bin/pip install --quiet \
-        torch torchvision torchaudio \
-        --index-url https://download.pytorch.org/whl/{{ comfyui_cuda_version }} &&
       {{ comfyui_app_dir }}/venv/bin/pip install --quiet \
         -r {{ comfyui_app_dir }}/requirements.txt
     "
@@ -112,7 +161,7 @@
 # Launcher: starts ComfyUI inside distrobox, waits for server, opens Chromium fullscreen
 - name: Deploy ComfyUI launcher script
   ansible.builtin.copy:
-    dest: "{{ real_user_home }}/.local/bin/comfyui-launch"
+    dest: "{{ real_user_home }}/.local/bin/comfyui"
     mode: '0755'
     content: |
       #!/usr/bin/env bash
@@ -122,12 +171,20 @@
       CONTAINER={{ comfyui_container_name }}
       APP_DIR={{ comfyui_app_dir }}
 
+      cleanup() {
+        echo "[comfyui] Stopping server..."
+        podman exec "$CONTAINER" pkill -f "python main.py" 2>/dev/null || true
+        kill "$SERVER_PID" 2>/dev/null || true
+      }
+      trap cleanup EXIT
+
       echo "[comfyui] Starting server in distrobox..."
       distrobox-enter --name "$CONTAINER" -- bash -c "
         source $APP_DIR/venv/bin/activate &&
         cd $APP_DIR &&
         python main.py --listen 127.0.0.1 --port $PORT
       " &
+      SERVER_PID=$!
 
       echo "[comfyui] Waiting for server on port $PORT..."
       until curl -sf "http://127.0.0.1:$PORT" > /dev/null 2>&1; do
@@ -135,7 +192,22 @@
       done
 
       echo "[comfyui] Opening Chromium..."
-      chromium --fullscreen "http://127.0.0.1:$PORT"
+      chromium --app="http://127.0.0.1:$PORT" \
+        --user-data-dir=/tmp/comfyui-chromium
+  become: false
+
+- name: Deploy ComfyUI desktop entry
+  ansible.builtin.copy:
+    dest: "{{ real_user_home }}/.local/share/applications/comfyui.desktop"
+    mode: '0644'
+    content: |
+      [Desktop Entry]
+      Name=ComfyUI
+      Exec=bash -c '{{ real_user_home }}/.local/bin/comfyui'
+      Icon=image-x-generic
+      Type=Application
+      Categories=Graphics;
+      Terminal=false
   become: false
 
 - name: Add comfyui alias to fish config
@@ -143,5 +215,5 @@
     path: "{{ real_user_home }}/.config/fish/config.fish"
     marker: "# {mark} ANSIBLE MANAGED - comfyui alias"
     block: |
-      alias comfyui='~/.local/bin/comfyui-launch'
+      alias comfyui='~/.local/bin/comfyui'
   become: false

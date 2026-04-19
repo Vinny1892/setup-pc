@@ -1,8 +1,7 @@
 ---
 comfyui_container_name: comfyui
-comfyui_image: ubuntu:24.04
+comfyui_image: archlinux:latest
 comfyui_port: 8188
 comfyui_dir: "{{ real_user_home }}/comfyui"
 comfyui_app_dir: "{{ real_user_home }}/comfyui/app"
 comfyui_models_dir: "{{ real_user_home }}/comfyui/models"
-comfyui_cuda_version: cu124
