@@ -1,4 +1,27 @@
 ---
+- name: Clone noctalia plugins repository
+  ansible.builtin.git:
+    repo: https://github.com/noctalia-dev/noctalia-plugins.git
+    dest: /tmp/noctalia-plugins
+    depth: 1
+    update: true
+  become: false
+
+- name: Install network-manager-vpn noctalia plugin
+  ansible.builtin.shell: |
+    cp -r /tmp/noctalia-plugins/network-manager-vpn \
+      {{ real_user_home }}/.config/noctalia/plugins/
+  args:
+    creates: "{{ real_user_home }}/.config/noctalia/plugins/network-manager-vpn"
+  become: false
+
+- name: Deploy noctalia settings.json
+  ansible.builtin.copy:
+    src: noctalia-settings.json
+    dest: "{{ real_user_home }}/.config/noctalia/settings.json"
+    mode: '0644'
+  become: false
+
 - name: Deploy custom keybinds.kdl
   ansible.builtin.copy:
     src: keybinds.kdl
