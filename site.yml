@@ -107,7 +107,7 @@
       tags: [ia]
 
     - role: comfyui
-      tags: [ia]
+      tags: [comfyui]
 
     # --- gaming ---
     - role: gamepad

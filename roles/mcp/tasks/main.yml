@@ -1,29 +1,33 @@
 ---
-- name: Configure MCP servers in ~/.claude/settings.json
-  ansible.builtin.shell: |
-    jq '. * {
-      "mcpServers": {
-        "kubernetes-mcp-server": {
-          "command": "npx",
-          "args": ["-y", "kubernetes-mcp-server@latest", "--read-only"],
-          "env": {
-            "KUBECONFIG": "{{ real_user_home }}/.kube/config"
-          }
-        },
-        "grafana": {
-          "command": "uvx",
-          "args": ["mcp-grafana"],
-          "env": {
-            "GRAFANA_URL": "{{ grafana_url | default('http://localhost:3000') }}",
-            "GRAFANA_SERVICE_ACCOUNT_TOKEN": "{{ grafana_token | default('') }}"
-          }
-        },
-        "cloudflare": {
-          "type": "http",
-          "url": "https://mcp.cloudflare.com/mcp"
-        }
-      }
-    }' ~/.claude/settings.json > /tmp/claude_settings_new.json \
-    && mv /tmp/claude_settings_new.json ~/.claude/settings.json
+- name: Add kubernetes-mcp-server
+  ansible.builtin.command:
+    cmd: >
+      claude mcp add
+      -e KUBECONFIG={{ real_user_home }}/.kube/config
+      kubernetes-mcp-server --
+      npx -y kubernetes-mcp-server@latest --read-only
   become: false
-  changed_when: true
+  register: mcp_k8s
+  changed_when: "'already exists' not in mcp_k8s.stderr"
+  failed_when: mcp_k8s.rc != 0 and 'already exists' not in mcp_k8s.stderr
+
+- name: Add grafana MCP server
+  ansible.builtin.command:
+    cmd: >
+      claude mcp add
+      -e GRAFANA_URL={{ grafana_url | default('http://localhost:3000') }}
+      -e GRAFANA_SERVICE_ACCOUNT_TOKEN={{ grafana_token | default('') }}
+      grafana --
+      uvx mcp-grafana
+  become: false
+  register: mcp_grafana
+  changed_when: "'already exists' not in mcp_grafana.stderr"
+  failed_when: mcp_grafana.rc != 0 and 'already exists' not in mcp_grafana.stderr
+
+- name: Add cloudflare MCP server
+  ansible.builtin.command:
+    cmd: claude mcp add --transport http cloudflare https://mcp.cloudflare.com/mcp
+  become: false
+  register: mcp_cloudflare
+  changed_when: "'already exists' not in mcp_cloudflare.stderr"
+  failed_when: mcp_cloudflare.rc != 0 and 'already exists' not in mcp_cloudflare.stderr

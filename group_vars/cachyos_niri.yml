@@ -7,7 +7,6 @@ extra_packages:
   - evince
   - gnome-text-editor
   - niri
-  - 1password
   - wtype
   # build deps para PHP via mise
   - base-devel
@@ -31,6 +30,6 @@ aur_packages:
   - slack-desktop
   - freelens-bin
   - gearlever
-
+  - 1password
 gamepad_packages:
   - xpadneo-dkms

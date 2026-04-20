@@ -76,25 +76,44 @@ setup-pc/
 bash setup.sh
 ```
 
-Instala o `ansible-core` e as collections necessárias (`community.general`, `kewlfft.aur`).
+Instala o `ansible-core` e as collections necessárias (`community.general`, `kewlfft.aur`). O script detecta o SO automaticamente e exibe os comandos prontos com o inventory correto.
 
-### 2. Rodar o playbook completo
+### 2. Instalação em estágios (recomendado)
+
+**Estágio 1 — Crítico** (storage + secure boot): faça isso primeiro em uma instalação nova.
 
 ```sh
-ansible-playbook site.yml -i inventory/hosts
+ansible-playbook -i inventory/cachyos-niri.yml site.yml --tags storage,security
 ```
 
-Vai pedir a senha sudo no início.
+**Estágio 2 — Base** (ferramentas, desktop, devtools):
 
-### 3. Rodar por contexto (tags)
+```sh
+ansible-playbook -i inventory/cachyos-niri.yml site.yml --tags tools,cachyos,devtools,gaming
+```
 
-Cada role tem tag própria pra rodar só o que precisar:
+**Estágio 3 — IA** (Claude Code, MCPs, Codex):
+
+```sh
+ansible-playbook -i inventory/cachyos-niri.yml site.yml --tags ia
+```
+
+**Estágio 3b — ComfyUI** (opcional, demora bastante):
+
+```sh
+ansible-playbook -i inventory/cachyos-niri.yml site.yml --tags comfyui
+```
+
+> O inventory correto para o seu SO é exibido pelo `setup.sh` após o bootstrap.
+
+### 3. Tags disponíveis
 
 | Tag | O que roda |
 |---|---|
 | `tools` | common, packages, shell_tools, tmux, chromium, slack, onepassword, vpn |
 | `devtools` | mise, dev_tools, docker, jetbrains_toolbox |
 | `ia` | claude_code, openclaude, codex, skills, mcp |
+| `comfyui` | comfyui (isolado, não incluído em `ia`) |
 | `gaming` | gaming, gamepad |
 | `security` | secure_boot |
 | `storage` | storage (ZRAM, snapper, CoW) |
@@ -104,24 +123,10 @@ Cada role tem tag própria pra rodar só o que precisar:
 | `ubuntu` | roles base (apt) |
 | `fedora` | roles base (dnf) |
 
-```sh
-# Instalar só ferramentas de IA
-ansible-playbook site.yml --tags ia
-
-# Instalar só o setup de gaming
-ansible-playbook site.yml --tags gaming
-
-# Instalar devtools e shell tools
-ansible-playbook site.yml --tags devtools,tools
-
-# Rodar tudo exceto gaming
-ansible-playbook site.yml --skip-tags gaming
-```
-
 ### 4. Rodar só as keybinds do Niri
 
 ```sh
-ansible-playbook site.yml --tags keybinds
+ansible-playbook -i inventory/cachyos-niri.yml site.yml --tags keybinds
 niri msg action load-config-file
 ```
 
@@ -139,8 +144,8 @@ niri msg action load-config-file
 
 ### CachyOS + Niri (`group_vars/cachyos_niri.yml`)
 
-**Pacman:** niri, 1password, 1password-cli, wtype + build deps para PHP via mise  
-**AUR (paru):** slack-desktop
+**Pacman:** niri, 1password-cli, wtype + build deps para PHP via mise  
+**AUR (paru):** 1password, slack-desktop, freelens-bin, gearlever
 
 ---
 
@@ -186,11 +191,24 @@ Inclui também **Starship** (prompt), **Atuin** (histórico encriptado) e **git-
 
 ## Ferramentas de IA
 
-| Ferramenta  | Instalação     | Função                      |
-|-------------|----------------|-----------------------------|
-| claude      | install script | Claude Code CLI             |
-| openclaude  | npm            | Wrapper da Claude API       |
-| codex       | npm            | OpenAI Codex CLI            |
+| Ferramenta  | Instalação     | Função                           |
+|-------------|----------------|----------------------------------|
+| claude      | install script | Claude Code CLI                  |
+| openclaude  | npm            | Wrapper da Claude API            |
+| codex       | npm            | OpenAI Codex CLI                 |
+| comfyui     | tag própria    | Geração de imagens (opcional)    |
+
+### ComfyUI
+
+Roda dentro de um container distrobox (Arch Linux) com passthrough de GPU NVIDIA. A imagem é construída com `buildah` e já inclui `python-pytorch-opt-cuda` + `python-torchvision-cuda`. O diretório `~/comfyui/models/` do host é compartilhado automaticamente com o container.
+
+```sh
+comfyui   # inicia o servidor + abre o Chromium como PWA em http://127.0.0.1:8188
+```
+
+Fechar a janela do Chromium para o servidor automaticamente. Um `.desktop` entry é criado para lançar pelo app launcher do sistema.
+
+Diretórios de modelos criados em `~/comfyui/models/`: `checkpoints`, `loras`, `vae`, `embeddings`, `controlnet`, `upscale_models`, `clip`, `diffusion_models`.
 
 ### Skills
 
@@ -208,7 +226,7 @@ Clonadas de [DiegoBulhoes/claude](https://github.com/DiegoBulhoes/claude) em `~/
 
 ## MCP servers
 
-Configurados em `~/.claude/settings.json`:
+Configurados via `claude mcp add` (não edita o JSON diretamente — funciona mesmo em instalação nova do Claude Code):
 
 | Server                | Transporte | Observações                              |
 |-----------------------|------------|------------------------------------------|
@@ -218,7 +236,8 @@ Configurados em `~/.claude/settings.json`:
 
 Para definir credenciais do Grafana:
 ```sh
-ansible-playbook site.yml -e grafana_url=https://myinstance.grafana.net -e grafana_token=<token>
+ansible-playbook -i inventory/cachyos-niri.yml site.yml --tags ia \
+  -e grafana_url=https://myinstance.grafana.net -e grafana_token=<token>
 ```
 
 ---
@@ -459,5 +478,5 @@ tmux source ~/.config/tmux/tmux.conf
 ### Rodar só as keybinds via Ansible
 
 ```sh
-ansible-playbook site.yml --tags keybinds
+ansible-playbook -i inventory/cachyos-niri.yml site.yml --tags keybinds
 ```

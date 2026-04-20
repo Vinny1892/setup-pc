@@ -76,25 +76,44 @@ setup-pc/
 bash setup.sh
 ```
 
-Installs `ansible-core` and required collections (`community.general`, `kewlfft.aur`).
+Installs `ansible-core` and required collections (`community.general`, `kewlfft.aur`). The script auto-detects your OS and prints ready-to-use commands with the correct inventory.
 
-### 2. Run the full playbook
+### 2. Staged installation (recommended)
+
+**Stage 1 — Critical** (storage + secure boot): run this first on a fresh install.
 
 ```sh
-ansible-playbook site.yml -i inventory/hosts
+ansible-playbook -i inventory/cachyos-niri.yml site.yml --tags storage,security
 ```
 
-You will be prompted for your sudo password at the start.
+**Stage 2 — Base** (tools, desktop, devtools):
 
-### 3. Run by context (tags)
+```sh
+ansible-playbook -i inventory/cachyos-niri.yml site.yml --tags tools,cachyos,devtools,gaming
+```
 
-Each role is tagged so you can run only what you need:
+**Stage 3 — AI** (Claude Code, MCPs, Codex):
+
+```sh
+ansible-playbook -i inventory/cachyos-niri.yml site.yml --tags ia
+```
+
+**Stage 3b — ComfyUI** (optional, takes a while):
+
+```sh
+ansible-playbook -i inventory/cachyos-niri.yml site.yml --tags comfyui
+```
+
+> The correct inventory for your OS is shown by `setup.sh` after bootstrapping.
+
+### 3. Available tags
 
 | Tag | What runs |
 |---|---|
 | `tools` | common, packages, shell_tools, tmux, chromium, slack, onepassword, vpn |
 | `devtools` | mise, dev_tools, docker, jetbrains_toolbox |
 | `ia` | claude_code, openclaude, codex, skills, mcp |
+| `comfyui` | comfyui only (not included in `ia`) |
 | `gaming` | gaming, gamepad |
 | `security` | secure_boot |
 | `storage` | storage (ZRAM, snapper, CoW) |
@@ -104,24 +123,10 @@ Each role is tagged so you can run only what you need:
 | `ubuntu` | base roles (apt) |
 | `fedora` | base roles (dnf) |
 
-```sh
-# Install only AI tools
-ansible-playbook site.yml --tags ia
-
-# Install only gaming setup
-ansible-playbook site.yml --tags gaming
-
-# Install dev tools and shell tools
-ansible-playbook site.yml --tags devtools,tools
-
-# Run everything except gaming
-ansible-playbook site.yml --skip-tags gaming
-```
-
 ### 4. Apply only Niri keybinds
 
 ```sh
-ansible-playbook site.yml --tags keybinds
+ansible-playbook -i inventory/cachyos-niri.yml site.yml --tags keybinds
 niri msg action load-config-file
 ```
 
@@ -139,8 +144,8 @@ niri msg action load-config-file
 
 ### CachyOS + Niri (`group_vars/cachyos_niri.yml`)
 
-**Pacman:** niri, 1password, 1password-cli, wtype + PHP build deps via mise  
-**AUR (paru):** slack-desktop
+**Pacman:** niri, 1password-cli, wtype + PHP build deps via mise  
+**AUR (paru):** 1password, slack-desktop, freelens-bin, gearlever
 
 ---
 
@@ -199,8 +204,6 @@ Also includes **Starship** prompt, **Atuin** (encrypted shell history) and **git
 | codex       | npm            | OpenAI Codex CLI            |
 | comfyui     | distrobox      | Stable Diffusion GUI (NVIDIA + CUDA) |
 
-### Skills
-
 ### ComfyUI
 
 Runs inside a distrobox container (Arch Linux) with NVIDIA GPU passthrough. The image is built with `buildah` and has `python-pytorch-opt-cuda` + `python-torchvision-cuda` baked in. The host's `~/comfyui/models/` directory is shared into the container automatically.
@@ -229,7 +232,7 @@ Cloned from [DiegoBulhoes/claude](https://github.com/DiegoBulhoes/claude) into `
 
 ## MCP servers
 
-Configured in `~/.claude/settings.json`:
+Configured via `claude mcp add` (doesn't edit JSON directly — works even on a fresh Claude Code install):
 
 | Server               | Transport | Notes                                  |
 |----------------------|-----------|----------------------------------------|
@@ -239,7 +242,8 @@ Configured in `~/.claude/settings.json`:
 
 To set Grafana credentials at runtime:
 ```sh
-ansible-playbook site.yml -e grafana_url=https://myinstance.grafana.net -e grafana_token=<token>
+ansible-playbook -i inventory/cachyos-niri.yml site.yml --tags ia \
+  -e grafana_url=https://myinstance.grafana.net -e grafana_token=<token>
 ```
 
 ---
@@ -480,5 +484,5 @@ tmux source ~/.config/tmux/tmux.conf
 ### Apply only keybinds via Ansible
 
 ```sh
-ansible-playbook site.yml --tags keybinds
+ansible-playbook -i inventory/cachyos-niri.yml site.yml --tags keybinds
 ```
