@@ -18,6 +18,12 @@
     state: present
   when: pkg_manager == "dnf"
 
+- name: Disable pam_faillock account lockout
+  ansible.builtin.lineinfile:
+    path: /etc/security/faillock.conf
+    regexp: '^#?\s*deny\s*='
+    line: 'deny = 0'
+
 - name: Set fish as default shell
   ansible.builtin.user:
     name: "{{ ansible_user_id }}"
