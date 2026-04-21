@@ -88,6 +88,7 @@
       - "*.efi"
       - "*.EFI"
       - "vmlinuz-*"
+      - "linux"
     recurse: true
     file_type: file
   register: boot_binaries
@@ -97,22 +98,31 @@
   loop: "{{ boot_binaries.files }}"
   loop_control:
     label: "{{ item.path }}"
+  register: sbctl_sign_item
   changed_when: true
-  failed_when: false
+  failed_when: sbctl_sign_item.rc != 0
 
 # Re-run in batch — idempotent, fixes any binary that got overwritten between
-# tasks (e.g. by a pacman hook that regenerated the initramfs).
+# tasks (e.g. by a pacman hook that regenerated the initramfs, or bootctl
+# update replacing the EFI binary outside of a pacman transaction).
 - name: Sign all registered binaries
   ansible.builtin.command: sbctl sign-all
+  register: sbctl_sign_all
   changed_when: true
+  failed_when: sbctl_sign_all.rc != 0
 
-# Strict verify — fails the play if ANY binary on the chain is unsigned.
-# Catches missed paths (odd UKI locations, chainloaded loaders, etc).
-- name: Verify all signatures (strict)
-  ansible.builtin.command: sbctl verify
-  register: sbctl_verify
+# Targeted verify — only checks the binaries we explicitly registered above.
+# Avoids false failures from unsigned EFI files on the ESP that are outside
+# our boot chain (fwupd capsules, firmware utilities, etc.) and would cause
+# `sbctl verify` (no-args full-ESP scan) to return non-zero unnecessarily.
+- name: Verify each registered binary is signed
+  ansible.builtin.command: "sbctl verify {{ item.path }}"
+  loop: "{{ boot_binaries.files }}"
+  loop_control:
+    label: "{{ item.path }}"
+  register: sbctl_verify_item
   changed_when: false
-  failed_when: sbctl_verify.rc != 0
+  failed_when: sbctl_verify_item.rc != 0
 
 - name: Create post-setup snapshot
   ansible.builtin.command: >

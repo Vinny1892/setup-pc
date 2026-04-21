@@ -20,7 +20,7 @@
 
 - name: Set fish as default shell
   ansible.builtin.user:
-    name: "{{ ansible_facts['user_id'] }}"
+    name: "{{ ansible_user_id }}"
     shell: /usr/bin/fish
 
 - name: Disable fish greeting (override CachyOS default)
