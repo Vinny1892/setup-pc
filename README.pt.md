@@ -285,7 +285,7 @@ A versão do Heroic é controlada pela variável `gaming_heroic_version` em `rol
 
 ## Bootloader
 
-O playbook assume que **systemd-boot** foi escolhido durante a instalação do CachyOS. Limine não é mais suportado (ele reescreve o binário EFI a cada `limine-update` / `limine-install`, o que quebra silenciosamente a assinatura do Secure Boot).
+O playbook assume que **systemd-boot** foi escolhido durante a instalação do CachyOS.
 
 O role `bootloader`:
 

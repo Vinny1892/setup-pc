@@ -291,7 +291,7 @@ Heroic version is controlled by `gaming_heroic_version` in `roles/gaming/default
 
 ## Bootloader
 
-The playbook assumes **systemd-boot** was picked during CachyOS installation. Limine is not supported anymore (it rewrites the EFI binary on every `limine-update` / `limine-install`, which silently breaks Secure Boot signatures).
+The playbook assumes **systemd-boot** was picked during CachyOS installation.
 
 The `bootloader` role:
 
