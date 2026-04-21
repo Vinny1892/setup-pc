@@ -43,4 +43,4 @@
   changed_when: "'Skipping' not in bootctl_update.stderr | default('')"
   failed_when:
     - bootctl_update.rc != 0
-    - "'No update needed' not in bootctl_update.stderr | default('')"
+    - "'same boot loader version' not in bootctl_update.stderr | default('')"
