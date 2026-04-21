@@ -1,0 +1,46 @@
+---
+# Verify systemd-boot is the current bootloader. We don't install or migrate
+# here — pick systemd-boot in the CachyOS installer; this role only tunes it.
+
+- name: Check bootctl status
+  ansible.builtin.command: bootctl --no-pager status
+  register: bootctl_status
+  changed_when: false
+  failed_when: false
+
+- name: Assert systemd-boot is the current bootloader
+  ansible.builtin.assert:
+    that:
+      - bootctl_status.rc == 0
+      - "'systemd-boot' in bootctl_status.stdout"
+    fail_msg: >-
+      systemd-boot not detected as the current bootloader.
+      Reinstall picking systemd-boot in the CachyOS installer,
+      or skip this role with --skip-tags bootloader.
+
+- name: Check if loader.conf exists
+  ansible.builtin.stat:
+    path: /boot/loader/loader.conf
+  register: loader_conf_stat
+
+- name: Configure systemd-boot loader.conf
+  ansible.builtin.lineinfile:
+    path: /boot/loader/loader.conf
+    regexp: "^#?\\s*{{ item.key }}\\b"
+    line: "{{ item.key }} {{ item.value }}"
+    create: false
+  loop:
+    - { key: timeout,       value: "{{ bootloader_timeout }}" }
+    - { key: console-mode,  value: "{{ bootloader_console_mode }}" }
+    - { key: editor,        value: "{{ bootloader_editor }}" }
+  when: loader_conf_stat.stat.exists
+
+# Reinstalls the systemd-boot EFI binary onto the ESP. The zz-sbctl pacman
+# hook will pick it up and re-sign on any systemd package upgrade.
+- name: Update systemd-boot binary on the ESP
+  ansible.builtin.command: bootctl update
+  register: bootctl_update
+  changed_when: "'Skipping' not in bootctl_update.stderr | default('')"
+  failed_when:
+    - bootctl_update.rc != 0
+    - "'No update needed' not in bootctl_update.stderr | default('')"

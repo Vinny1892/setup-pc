@@ -38,6 +38,10 @@
     - role: storage
       tags: [storage, cachyos, arch, ubuntu, fedora]
 
+    - role: bootloader
+      tags: [bootloader, cachyos, arch]
+      when: ansible_facts['distribution'] in ["Archlinux", "CachyOS"]
+
     - role: packages
       tags: [tools, cachyos, arch, ubuntu, fedora]
 

@@ -17,6 +17,7 @@ Ansible playbook to automate system setup after a fresh install.
 - [Storage](#storage)
 - [VPN](#vpn)
 - [Gaming](#gaming)
+- [Bootloader](#bootloader)
 - [Secure Boot](#secure-boot)
 - [Niri — Keybinds](#niri--keybinds)
 - [tmux](#tmux)
@@ -116,6 +117,7 @@ ansible-playbook -i inventory/cachyos-niri.yml site.yml --tags comfyui
 | `comfyui` | comfyui only (not included in `ia`) |
 | `gaming` | gaming, gamepad |
 | `security` | secure_boot |
+| `bootloader` | systemd-boot (Arch/CachyOS only) |
 | `storage` | storage (ZRAM, snapper, CoW) |
 | `niri` | niri, theme |
 | `cachyos` | aur + all cachyos/arch roles |
@@ -287,6 +289,18 @@ Heroic version is controlled by `gaming_heroic_version` in `roles/gaming/default
 
 ---
 
+## Bootloader
+
+The playbook assumes **systemd-boot** was picked during CachyOS installation. Limine is not supported anymore (it rewrites the EFI binary on every `limine-update` / `limine-install`, which silently breaks Secure Boot signatures).
+
+The `bootloader` role:
+
+1. Asserts `bootctl` reports systemd-boot as the current bootloader (fails fast if not).
+2. Sets sane defaults in `/boot/loader/loader.conf` (timeout, console mode, editor disabled).
+3. Runs `bootctl update` so the EFI binary on the ESP matches the installed `systemd` package — the `zz-sbctl` pacman hook re-signs it afterwards.
+
+If you install with a different bootloader, skip with `--skip-tags bootloader`.
+
 ## Secure Boot
 
 Uses `sbctl` to enroll custom keys **alongside** Microsoft certificates so that Windows/BitLocker on the second drive keeps working.
@@ -309,9 +323,11 @@ Uses `sbctl` to enroll custom keys **alongside** Microsoft certificates so that 
 | Step | What happens | Idempotent? |
 |---|---|---|
 | Key creation | Creates keys in `/var/lib/sbctl/keys/` | Skipped if keys exist |
-| Key enrollment | Enrolls custom + Microsoft keys into firmware | Skipped if `vendor_keys == microsoft` |
-| Sign all | Signs bootloader, kernel and UKI in `/boot` | Always runs (safe to re-run) |
-| Verify | Fails the play if any binary is unsigned | Always runs |
+| Setup Mode assert | Fails with actionable message if firmware is not in Setup Mode during first run | First run only |
+| Key enrollment | Enrolls custom + Microsoft keys into firmware | Skipped if already enrolled |
+| Discover & register | Finds `*.efi` and `vmlinuz-*` under `/boot` and registers each with `sbctl sign -s` so files.json is populated | Always runs (idempotent) |
+| Sign all | Re-signs every registered binary | Always runs (safe to re-run) |
+| Verify | Fails the play if **any** binary is unsigned (strict) | Always runs |
 
 Snapper snapshots are created before and after the setup — only on the first run.
 

@@ -38,41 +38,81 @@
   changed_when: true
   when: not sbctl_db_key.stat.exists
 
-# Enrollment guard — parse vendor_keys from sbctl status JSON
-# Guard: only enroll when firmware is in Setup Mode (setup_mode: true)
-# setup_mode: false means keys are already enrolled — skip enrollment entirely
+# Parse current firmware state
 - name: Get sbctl status
   ansible.builtin.command: sbctl status --json
   register: secure_boot_status_result
   changed_when: false
 
-- name: Set sbctl setup mode fact
+- name: Set sbctl facts
   ansible.builtin.set_fact:
     secure_boot_setup_mode: "{{ (secure_boot_status_result.stdout | from_json).setup_mode }}"
+    secure_boot_installed: "{{ (secure_boot_status_result.stdout | from_json).installed | default(false) }}"
 
-- name: Remove immutable flag from EFI variables
-  ansible.builtin.command: chattr -i {{ item }}
+# If keys don't exist AND firmware is not in setup mode, fail loudly with an
+# actionable message — otherwise the play silently skips enroll, signing
+# becomes a no-op, and the user discovers the problem at next reboot.
+- name: Assert firmware is in Setup Mode for first-time enrollment
+  ansible.builtin.assert:
+    that:
+      - secure_boot_setup_mode | bool
+    fail_msg: >-
+      Firmware is NOT in Setup Mode. Reboot into BIOS, go to
+      Security → Secure Boot → "Delete/Reset Secure Boot Keys", save, reboot
+      back to Linux (with SB still disabled), and re-run this role.
+      BitLocker continues to work because we re-enroll Microsoft keys below.
+  when: not sbctl_db_key.stat.exists
+
+- name: Remove immutable flag from EFI variables (AMI firmware quirk)
+  ansible.builtin.command: "chattr -i {{ item }}"
   loop:
     - /sys/firmware/efi/efivars/PK-8be4df61-93ca-11d2-aa0d-00e098032b8c
     - /sys/firmware/efi/efivars/KEK-8be4df61-93ca-11d2-aa0d-00e098032b8c
     - /sys/firmware/efi/efivars/db-d719b2cb-3d3a-4596-a3bc-dad00e67656f
   changed_when: false
   failed_when: false
-  when: secure_boot_setup_mode
+  when: secure_boot_setup_mode | bool
 
 - name: Enroll keys with Microsoft certificates
   ansible.builtin.command: sbctl enroll-keys --microsoft
   changed_when: true
-  when: secure_boot_setup_mode
+  when: secure_boot_setup_mode | bool
 
-# Sign and verify — sign-all is idempotent (safe to re-run)
-- name: Sign all boot binaries
+# Explicitly register known boot binaries so `sbctl sign-all` has something
+# to iterate over. On a fresh system files.json is empty; without this step,
+# sign-all is a no-op and the next reboot with SB enabled fails.
+- name: Discover EFI binaries and kernels under /boot
+  ansible.builtin.find:
+    paths: /boot
+    patterns:
+      - "*.efi"
+      - "*.EFI"
+      - "vmlinuz-*"
+    recurse: true
+    file_type: file
+  register: boot_binaries
+
+- name: Register each binary with sbctl (adds to files.json, signs once)
+  ansible.builtin.command: "sbctl sign -s {{ item.path }}"
+  loop: "{{ boot_binaries.files }}"
+  loop_control:
+    label: "{{ item.path }}"
+  changed_when: true
+  failed_when: false
+
+# Re-run in batch — idempotent, fixes any binary that got overwritten between
+# tasks (e.g. by a pacman hook that regenerated the initramfs).
+- name: Sign all registered binaries
   ansible.builtin.command: sbctl sign-all
   changed_when: true
 
-- name: Verify all signatures
+# Strict verify — fails the play if ANY binary on the chain is unsigned.
+# Catches missed paths (odd UKI locations, chainloaded loaders, etc).
+- name: Verify all signatures (strict)
   ansible.builtin.command: sbctl verify
+  register: sbctl_verify
   changed_when: false
+  failed_when: sbctl_verify.rc != 0
 
 - name: Create post-setup snapshot
   ansible.builtin.command: >

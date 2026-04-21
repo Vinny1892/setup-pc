@@ -1,0 +1,4 @@
+---
+bootloader_timeout: 3
+bootloader_console_mode: keep
+bootloader_editor: "no"

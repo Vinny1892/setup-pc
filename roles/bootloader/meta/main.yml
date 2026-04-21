@@ -1,0 +1,16 @@
+---
+galaxy_info:
+  author: "Vinicius Espindola"
+  description: "systemd-boot configuration (assumes bootloader was installed by the distro installer)"
+  license: "MIT"
+  min_ansible_version: "2.15"
+  platforms:
+    - name: Archlinux
+      versions:
+        - all
+  galaxy_tags:
+    - bootloader
+    - systemd-boot
+    - uefi
+
+dependencies: []

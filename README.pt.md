@@ -17,6 +17,7 @@ Playbook Ansible para automatizar a configuração do sistema após uma reinstal
 - [Storage](#storage)
 - [VPN](#vpn)
 - [Gaming](#gaming)
+- [Bootloader](#bootloader)
 - [Secure Boot](#secure-boot)
 - [Niri — Keybinds](#niri--keybinds)
 - [tmux](#tmux)
@@ -116,6 +117,7 @@ ansible-playbook -i inventory/cachyos-niri.yml site.yml --tags comfyui
 | `comfyui` | comfyui (isolado, não incluído em `ia`) |
 | `gaming` | gaming, gamepad |
 | `security` | secure_boot |
+| `bootloader` | systemd-boot (só Arch/CachyOS) |
 | `storage` | storage (ZRAM, snapper, CoW) |
 | `niri` | niri, theme |
 | `cachyos` | aur + roles cachyos/arch |
@@ -281,6 +283,18 @@ A versão do Heroic é controlada pela variável `gaming_heroic_version` em `rol
 
 ---
 
+## Bootloader
+
+O playbook assume que **systemd-boot** foi escolhido durante a instalação do CachyOS. Limine não é mais suportado (ele reescreve o binário EFI a cada `limine-update` / `limine-install`, o que quebra silenciosamente a assinatura do Secure Boot).
+
+O role `bootloader`:
+
+1. Valida via `bootctl` que systemd-boot é o bootloader atual (falha rápido se não for).
+2. Ajusta defaults razoáveis em `/boot/loader/loader.conf` (timeout, console mode, editor desativado).
+3. Roda `bootctl update` para o binário EFI na ESP bater com o pacote `systemd` instalado — o pacman hook `zz-sbctl` re-assina em seguida.
+
+Se você instalou com outro bootloader, pule com `--skip-tags bootloader`.
+
 ## Secure Boot
 
 Usa `sbctl` para enrollar chaves customizadas **junto** dos certificados Microsoft para que o Windows/BitLocker no segundo disco continue funcionando normalmente.
@@ -303,9 +317,11 @@ O `sbctl enroll-keys` exige que o firmware esteja em **Setup Mode** para consegu
 | Etapa | O que acontece | Idempotente? |
 |---|---|---|
 | Criação das chaves | Cria chaves em `/var/lib/sbctl/keys/` | Pulado se já existirem |
-| Enrollment | Enrolla chaves custom + Microsoft na firmware | Pulado se `vendor_keys == microsoft` |
-| Sign all | Assina bootloader, kernel e UKI em `/boot` | Sempre roda (seguro re-rodar) |
-| Verify | Falha o play se algum binário não estiver assinado | Sempre roda |
+| Assert Setup Mode | Falha com mensagem acionável se o firmware não estiver em Setup Mode na primeira execução | Só na primeira vez |
+| Enrollment | Enrolla chaves custom + Microsoft na firmware | Pulado se já enrolladas |
+| Descobrir & registrar | Encontra `*.efi` e `vmlinuz-*` em `/boot` e registra cada um com `sbctl sign -s` pra popular o files.json | Sempre roda (idempotente) |
+| Sign all | Re-assina todos os binários registrados | Sempre roda (seguro re-rodar) |
+| Verify | Falha o play se **qualquer** binário não estiver assinado (strict) | Sempre roda |
 
 Snapshots do snapper são criados antes e depois do setup — apenas na primeira execução.
 
