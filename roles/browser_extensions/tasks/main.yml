@@ -1,0 +1,42 @@
+---
+- name: Ensure Firefox policies directory exists
+  ansible.builtin.file:
+    path: "{{ firefox_policies_dir }}"
+    state: directory
+    mode: '0755'
+  when: browser_extensions_firefox | length > 0
+
+- name: Deploy Firefox policies.json (force-installed extensions)
+  ansible.builtin.template:
+    src: firefox-policies.json.j2
+    dest: "{{ firefox_policies_dir }}/policies.json"
+    mode: '0644'
+  when: browser_extensions_firefox | length > 0
+
+- name: Ensure Chromium managed policies directory exists
+  ansible.builtin.file:
+    path: "{{ chromium_policies_dir }}"
+    state: directory
+    mode: '0755'
+  when: browser_extensions_chromium | length > 0
+
+- name: Deploy Chromium force-install policy
+  ansible.builtin.template:
+    src: chromium-policy.json.j2
+    dest: "{{ chromium_policies_dir }}/extensions.json"
+    mode: '0644'
+  when: browser_extensions_chromium | length > 0
+
+- name: Ensure Google Chrome managed policies directory exists
+  ansible.builtin.file:
+    path: "{{ google_chrome_policies_dir }}"
+    state: directory
+    mode: '0755'
+  when: browser_extensions_chromium | length > 0
+
+- name: Deploy Google Chrome force-install policy
+  ansible.builtin.template:
+    src: chromium-policy.json.j2
+    dest: "{{ google_chrome_policies_dir }}/extensions.json"
+    mode: '0644'
+  when: browser_extensions_chromium | length > 0

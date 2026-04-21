@@ -84,6 +84,19 @@
     - snapper-timeline.timer
     - snapper-cleanup.timer
 
+# Limine snapper sync (CachyOS/Arch com limine)
+- name: Check if limine-snapper-sync is installed
+  ansible.builtin.stat:
+    path: /etc/limine-snapper-sync.conf
+  register: limine_snapper_conf
+
+- name: Set Limine max snapshot entries to auto
+  ansible.builtin.lineinfile:
+    path: /etc/limine-snapper-sync.conf
+    regexp: '^\s*MAX_SNAPSHOT_ENTRIES='
+    line: 'MAX_SNAPSHOT_ENTRIES=auto'
+  when: limine_snapper_conf.stat.exists
+
 # CoW desabilitado para Docker e Ollama (btrfs)
 - name: Create no-CoW directories for Docker and Ollama
   ansible.builtin.file:

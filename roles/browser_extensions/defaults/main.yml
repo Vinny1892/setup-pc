@@ -1,0 +1,17 @@
+---
+firefox_policies_dir: /etc/firefox/policies
+chromium_policies_dir: /etc/chromium/policies/managed
+google_chrome_policies_dir: /etc/opt/chrome/policies/managed
+
+# Firefox extensions forçadas via policies.json
+# guid: pode ser obtido da API: curl -s https://addons.mozilla.org/api/v5/addons/addon/<slug>/ | jq -r .guid
+browser_extensions_firefox:
+  - name: 1Password
+    guid: "{d634138d-c276-4fc8-924b-40a0ea21d284}"
+    slug: 1password-x-password-manager
+
+# Chromium/Chrome extensions forçadas via ExtensionInstallForcelist
+# id: disponível na URL da Chrome Web Store
+browser_extensions_chromium:
+  - name: 1Password
+    id: aeblfdkhhhdcdjpifhhbdiojplfjncoa

@@ -71,6 +71,9 @@
     - role: onepassword
       tags: [tools]
 
+    - role: browser_extensions
+      tags: [tools]
+
     - role: shell_tools
       tags: [tools]
 
