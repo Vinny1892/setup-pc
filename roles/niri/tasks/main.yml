@@ -29,3 +29,11 @@
     mode: '0644'
   become: false
   tags: keybinds
+
+- name: Disable focus-follows-mouse in niri input config
+  ansible.builtin.lineinfile:
+    path: "{{ real_user_home }}/.config/niri/cfg/input.kdl"
+    regexp: '^\s*focus-follows-mouse'
+    line: '    // focus-follows-mouse // Automatically focus windows under the mouse pointer'
+  become: false
+  tags: keybinds
