@@ -1,0 +1,16 @@
+{
+  "env": {
+    "PATH": "$(PATH):$(HOME)/.local/bin"
+  },
+  "apps": [
+    {
+      "name": "Desktop",
+      "image-path": "desktop.png"
+    },
+    {
+      "name": "Steam Big Picture",
+      "cmd": "gamescope -w 1920 -h 1080 -W 3840 -H 2160 -f -- steam -gamepadui",
+      "image-path": "steam.png"
+    }
+  ]
+}

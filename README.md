@@ -47,6 +47,8 @@ setup-pc/
     ├── shell_tools/      # Modern CLI replacements + starship + atuin + git config
     ├── storage/          # ZRAM, snapper snapshots, CoW disabled for docker/ollama
     ├── docker/           # Docker, lazygit, lazydocker, kind, minikube
+    ├── virtualization/   # virt-manager, gnome-boxes, QEMU/libvirt stack
+    ├── virtual_display/  # Virtual 4K display via EDID + Sunshine streaming
     ├── vpn/              # WireGuard + Cloudflare WARP
     ├── mcp/              # MCP servers (kubernetes, grafana, cloudflare)
     ├── skills/           # Claude Code skills from DiegoBulhoes/claude
@@ -112,10 +114,10 @@ ansible-playbook -i inventory/cachyos-niri.yml site.yml --tags comfyui
 | Tag | What runs |
 |---|---|
 | `tools` | common, packages, shell_tools, tmux, chromium, slack, onepassword, vpn |
-| `devtools` | mise, dev_tools, docker, jetbrains_toolbox |
+| `devtools` | mise, dev_tools, docker, virtualization, jetbrains_toolbox |
 | `ia` | claude_code, openclaude, codex, skills, mcp |
 | `comfyui` | comfyui only (not included in `ia`) |
-| `gaming` | gaming, gamepad |
+| `gaming` | gaming, gamepad, virtual_display (Arch/CachyOS only) |
 | `security` | secure_boot |
 | `bootloader` | systemd-boot (Arch/CachyOS only) |
 | `storage` | storage (ZRAM, snapper, CoW) |
@@ -273,7 +275,8 @@ ansible-playbook -i inventory/cachyos-niri.yml site.yml --tags ia \
 
 | Package | Purpose |
 |---|---|
-| `proton-cachyos-slr` | CachyOS-optimized Proton for Steam games |
+| `proton-cachyos` | CachyOS-optimized Proton for Heroic and non-Steam launchers |
+| `proton-cachyos-slr` | CachyOS-optimized Proton for Steam (Steam Linux Runtime build) |
 | `umu-launcher` | Run Proton outside of Steam (GOG, Epic, etc.) |
 | `wine-cachyos-opt` | CachyOS-optimized Wine for Windows apps |
 | `winetricks` / `protontricks` | Wine/Proton prefix configuration |
@@ -283,9 +286,43 @@ ansible-playbook -i inventory/cachyos-niri.yml site.yml --tags ia \
 | `heroic-games-launcher-bin` | Epic Games and GOG launcher |
 | `lutris` | Multi-source game manager |
 | `vulkan-tools` | Vulkan diagnostics |
+| `sunshine` | Self-hosted game stream host for Moonlight (CachyOS repo) |
 
 MangoHud config is deployed to `~/.config/MangoHud/MangoHud.conf`.  
 Heroic version is controlled by `gaming_heroic_version` in `roles/gaming/defaults/main.yml`.
+
+### Virtual display (Arch/CachyOS only)
+
+The `virtual_display` role creates a headless 4K display via EDID firmware + kernel parameter, used as a dedicated Sunshine streaming output.
+
+- Deploys a 4K EDID binary to `/usr/lib/firmware/edid/4k.bin` and bundles it into the initramfs
+- Appends `drm.edid_firmware` + `video=` kernel params to all systemd-boot entries
+- Configures Sunshine to capture the virtual connector
+- Disables the virtual output in Niri by default (won't appear on desktop until activated)
+- Deploys a `sunshine` fish function to toggle the display and start streaming:
+
+```sh
+sunshine on   # enables virtual display + starts Sunshine
+sunshine off  # disables virtual display + stops Sunshine
+```
+
+---
+
+## Virtualization
+
+Installed via the `virtualization` role (tag: `devtools`).
+
+| Package | Purpose |
+|---|---|
+| `qemu-full` / `qemu-kvm` | QEMU hypervisor |
+| `libvirt` | Virtualization management API |
+| `virt-manager` | GUI for managing VMs via libvirt |
+| `gnome-boxes` | Simple GNOME VM manager |
+| `virt-viewer` | Lightweight VM display client |
+| `dnsmasq` | DHCP/DNS for virtual networks |
+| `edk2-ovmf` | UEFI firmware for VMs |
+
+The role also enables the `libvirtd` service and adds the user to the `libvirt` and `kvm` groups (re-login required after first run).
 
 ---
 

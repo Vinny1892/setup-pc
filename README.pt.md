@@ -47,6 +47,8 @@ setup-pc/
     ├── shell_tools/      # Substituições modernas de CLI + starship + atuin + git config
     ├── storage/          # ZRAM, snapshots snapper, CoW desabilitado para docker/ollama
     ├── docker/           # Docker, lazygit, lazydocker, kind, minikube
+    ├── virtualization/   # virt-manager, gnome-boxes, stack QEMU/libvirt
+    ├── virtual_display/  # Display virtual 4K via EDID + streaming com Sunshine
     ├── vpn/              # WireGuard + Cloudflare WARP
     ├── mcp/              # MCP servers (kubernetes, grafana, cloudflare)
     ├── skills/           # Skills do Claude Code (DiegoBulhoes/claude)
@@ -112,10 +114,10 @@ ansible-playbook -i inventory/cachyos-niri.yml site.yml --tags comfyui
 | Tag | O que roda |
 |---|---|
 | `tools` | common, packages, shell_tools, tmux, chromium, slack, onepassword, vpn |
-| `devtools` | mise, dev_tools, docker, jetbrains_toolbox |
+| `devtools` | mise, dev_tools, docker, virtualization, jetbrains_toolbox |
 | `ia` | claude_code, openclaude, codex, skills, mcp |
 | `comfyui` | comfyui (isolado, não incluído em `ia`) |
-| `gaming` | gaming, gamepad |
+| `gaming` | gaming, gamepad, virtual_display (só Arch/CachyOS) |
 | `security` | secure_boot |
 | `bootloader` | systemd-boot (só Arch/CachyOS) |
 | `storage` | storage (ZRAM, snapper, CoW) |
@@ -267,7 +269,8 @@ ansible-playbook -i inventory/cachyos-niri.yml site.yml --tags ia \
 
 | Pacote | Função |
 |---|---|
-| `proton-cachyos-slr` | Proton otimizado pelo CachyOS para jogos Steam |
+| `proton-cachyos` | Proton otimizado pelo CachyOS para Heroic e launchers fora do Steam |
+| `proton-cachyos-slr` | Proton otimizado pelo CachyOS para Steam (build Steam Linux Runtime) |
 | `umu-launcher` | Roda Proton fora do Steam (GOG, Epic, etc.) |
 | `wine-cachyos-opt` | Wine otimizado pelo CachyOS |
 | `winetricks` / `protontricks` | Configuração de prefixes Wine/Proton |
@@ -277,9 +280,43 @@ ansible-playbook -i inventory/cachyos-niri.yml site.yml --tags ia \
 | `heroic-games-launcher-bin` | Launcher da Epic Games e GOG |
 | `lutris` | Gerenciador de jogos multi-plataforma |
 | `vulkan-tools` | Diagnóstico de Vulkan |
+| `sunshine` | Host de streaming para Moonlight (repositório CachyOS) |
 
 A config do MangoHud é instalada em `~/.config/MangoHud/MangoHud.conf`.  
 A versão do Heroic é controlada pela variável `gaming_heroic_version` em `roles/gaming/defaults/main.yml`.
+
+### Display virtual (só Arch/CachyOS)
+
+O role `virtual_display` cria um display headless 4K via firmware EDID + parâmetro de kernel, usado como saída dedicada para streaming com Sunshine.
+
+- Instala um binário EDID 4K em `/usr/lib/firmware/edid/4k.bin` e inclui no initramfs
+- Adiciona os parâmetros `drm.edid_firmware` + `video=` a todas as entradas do systemd-boot
+- Configura o Sunshine para capturar o conector virtual
+- Desativa o output virtual no Niri por padrão (não aparece no desktop até ser ativado)
+- Instala uma função `sunshine` no fish para alternar o display e iniciar o streaming:
+
+```sh
+sunshine on   # habilita o display virtual + inicia o Sunshine
+sunshine off  # desabilita o display virtual + para o Sunshine
+```
+
+---
+
+## Virtualização
+
+Instalado pelo role `virtualization` (tag: `devtools`).
+
+| Pacote | Função |
+|---|---|
+| `qemu-full` / `qemu-kvm` | Hypervisor QEMU |
+| `libvirt` | API de gerenciamento de virtualização |
+| `virt-manager` | GUI para gerenciar VMs via libvirt |
+| `gnome-boxes` | Gerenciador de VMs simplificado do GNOME |
+| `virt-viewer` | Cliente de display leve para VMs |
+| `dnsmasq` | DHCP/DNS para redes virtuais |
+| `edk2-ovmf` | Firmware UEFI para VMs |
+
+O role também habilita o serviço `libvirtd` e adiciona o usuário aos grupos `libvirt` e `kvm` (necessário re-login após a primeira execução).
 
 ---
 

@@ -34,7 +34,8 @@
 - name: Install gaming packages via pacman
   community.general.pacman:
     name:
-      - proton-cachyos-slr     # CachyOS-optimized Proton
+      - proton-cachyos         # CachyOS-optimized Proton (for Heroic and non-Steam launchers)
+      - proton-cachyos-slr     # CachyOS-optimized Proton (Steam Linux Runtime build)
       - umu-launcher           # Universal Proton launcher (runs Proton outside Steam)
       - gamescope              # Valve Wayland micro-compositor for games
       - mangohud               # FPS/GPU/CPU overlay
@@ -47,6 +48,7 @@
       - 7zip                   # Archive extraction (required by winetricks)
       - vulkan-tools           # Vulkan diagnostics and info
       - lutris                 # Multi-source game manager
+      - sunshine               # Self-hosted game stream host for Moonlight (CachyOS repo)
     state: present
   when: pkg_manager == "pacman"
 

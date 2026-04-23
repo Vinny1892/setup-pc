@@ -1,0 +1,59 @@
+---
+- name: Install virtualization packages via pacman
+  community.general.pacman:
+    name:
+      - qemu-full
+      - libvirt
+      - virt-manager
+      - gnome-boxes
+      - virt-viewer
+      - dnsmasq
+      - edk2-ovmf
+    state: present
+  when: pkg_manager == "pacman"
+
+- name: Install virtualization packages via apt
+  ansible.builtin.apt:
+    name:
+      - qemu-kvm
+      - libvirt-daemon-system
+      - libvirt-clients
+      - virt-manager
+      - gnome-boxes
+      - bridge-utils
+      - virtinst
+      - ovmf
+    state: present
+    update_cache: true
+  when: pkg_manager == "apt"
+
+- name: Install virtualization packages via dnf
+  ansible.builtin.dnf:
+    name:
+      - qemu-kvm
+      - libvirt
+      - virt-manager
+      - gnome-boxes
+      - virt-install
+      - bridge-utils
+      - edk2-ovmf
+    state: present
+  when: pkg_manager == "dnf"
+
+- name: Enable and start libvirtd
+  ansible.builtin.systemd_service:
+    name: libvirtd
+    enabled: true
+    state: started
+
+- name: Add user to libvirt group
+  ansible.builtin.user:
+    name: "{{ ansible_facts['user_id'] }}"
+    groups: libvirt
+    append: true
+
+- name: Add user to kvm group
+  ansible.builtin.user:
+    name: "{{ ansible_facts['user_id'] }}"
+    groups: kvm
+    append: true

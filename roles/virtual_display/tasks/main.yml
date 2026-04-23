@@ -1,0 +1,101 @@
+---
+# Cria um display virtual 4K via EDID firmware + parâmetro de kernel.
+# Seguro com Secure Boot: sbctl assina apenas o vmlinuz-*, não o cmdline
+# nem o initramfs separado — nenhuma assinatura precisa ser refeita.
+#
+# O display virtual sobe desligado por padrão (não interfere com apps).
+# Use `sunshine on` para ligar o display e iniciar o streaming.
+
+- name: Create EDID firmware directory
+  ansible.builtin.file:
+    path: /usr/lib/firmware/edid
+    state: directory
+    mode: '0755'
+
+- name: Deploy 4K EDID firmware file
+  ansible.builtin.copy:
+    src: 4k.bin
+    dest: /usr/lib/firmware/edid/4k.bin
+    mode: '0644'
+
+- name: Include EDID file in initramfs
+  ansible.builtin.lineinfile:
+    path: /etc/mkinitcpio.conf
+    regexp: '^FILES='
+    line: 'FILES=(/usr/lib/firmware/edid/4k.bin)'
+
+- name: Rebuild initramfs
+  ansible.builtin.command: mkinitcpio -P
+  changed_when: true
+
+- name: Find systemd-boot loader entry files
+  ansible.builtin.find:
+    paths: /boot/loader/entries
+    patterns: "*.conf"
+    file_type: file
+  register: virtual_display_boot_entries
+
+- name: Replace simple video= param with EDID-based param in boot entries
+  ansible.builtin.replace:
+    path: "{{ item.path }}"
+    regexp: '\s*video={{ virtual_display_connector }}:[^\s]+'
+    replace: ''
+  loop: "{{ virtual_display_boot_entries.files }}"
+  loop_control:
+    label: "{{ item.path }}"
+
+- name: Append EDID kernel parameters to boot entries
+  ansible.builtin.lineinfile:
+    path: "{{ item.path }}"
+    backrefs: true
+    regexp: '^(options (?!.*drm\.edid_firmware={{ virtual_display_connector }}).+)$'
+    line: '\1 drm.edid_firmware={{ virtual_display_connector }}:edid/4k.bin video={{ virtual_display_connector }}:e'
+  loop: "{{ virtual_display_boot_entries.files }}"
+  loop_control:
+    label: "{{ item.path }}"
+
+- name: Configure Sunshine to capture virtual display
+  ansible.builtin.copy:
+    dest: "{{ real_user_home }}/.config/sunshine/sunshine.conf"
+    content: "output_name = {{ virtual_display_connector }}\n"
+    mode: '0644'
+  become: false
+
+- name: Remove any unmanaged virtual display output block from Niri config
+  ansible.builtin.replace:
+    path: "{{ real_user_home }}/.config/niri/cfg/display.kdl"
+    regexp: '^output "{{ virtual_display_connector }}" \{\n\s+off\n\}\n'
+    replace: ''
+  become: false
+
+- name: Disable virtual display in Niri by default
+  ansible.builtin.blockinfile:
+    path: "{{ real_user_home }}/.config/niri/cfg/display.kdl"
+    marker: "// {mark} ANSIBLE MANAGED - virtual display"
+    block: |
+      output "{{ virtual_display_connector }}" {
+          off
+      }
+    create: false
+  become: false
+
+- name: Create fish functions directory
+  ansible.builtin.file:
+    path: "{{ real_user_home }}/.config/fish/functions"
+    state: directory
+    mode: '0755'
+  become: false
+
+- name: Deploy sunshine fish function
+  ansible.builtin.copy:
+    src: sunshine.fish
+    dest: "{{ real_user_home }}/.config/fish/functions/sunshine.fish"
+    mode: '0644'
+  become: false
+
+- name: Deploy Sunshine apps.json with display restore on disconnect
+  ansible.builtin.copy:
+    src: apps.json
+    dest: "{{ real_user_home }}/.config/sunshine/apps.json"
+    mode: '0644'
+  become: false

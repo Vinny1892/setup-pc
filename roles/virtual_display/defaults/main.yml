@@ -1,0 +1,5 @@
+---
+virtual_display_connector: "DP-2"
+virtual_display_index: 1       # índice do display virtual na lista do Sunshine (0=DP-1, 1=DP-2)
+virtual_display_resolution: "3840x2160"
+virtual_display_refresh: "60"

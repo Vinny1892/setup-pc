@@ -97,6 +97,9 @@
     - role: docker
       tags: [devtools]
 
+    - role: virtualization
+      tags: [devtools]
+
     # --- ia ---
     - role: claude_code
       tags: [ia]
@@ -122,6 +125,10 @@
 
     - role: gaming
       tags: [gaming]
+
+    - role: virtual_display
+      tags: [gaming]
+      when: ansible_facts['distribution'] in ["Archlinux", "CachyOS"]
 
     # --- security ---
     - role: secure_boot
