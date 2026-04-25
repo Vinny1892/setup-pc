@@ -462,7 +462,7 @@ The `sbctl` pacman hook auto-signs binaries on every kernel or systemd update.
 
 | Shortcut | Action |
 |----------|--------|
-| `Mod+Shift+Escape` | Hotkey overlay |
+| `Mod+Shift+Escape` / `Mod+Shift+H` | Hotkey overlay |
 | `Mod+Escape` | Toggle keyboard shortcuts inhibitor |
 | `Mod+Shift+P` | Power off monitors |
 | `Ctrl+Alt+Delete` | Quit Niri |

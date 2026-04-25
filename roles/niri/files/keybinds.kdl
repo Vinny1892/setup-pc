@@ -7,6 +7,7 @@ binds {
     // https://docs.noctalia.dev/getting-started/keybinds/
 
     Mod+Shift+ESCAPE                     { show-hotkey-overlay; }
+    Mod+Shift+H                          { show-hotkey-overlay; }
 
     // ─── Applications ───
     Mod+Return                          hotkey-overlay-title="Open Terminal: Alacritty + tmux" { spawn-sh "alacritty -e tmux new-session -A -s main"; }

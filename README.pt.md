@@ -456,7 +456,7 @@ O pacman hook do `sbctl` assina os binários automaticamente em cada atualizaç�
 
 | Atalho | Ação |
 |--------|------|
-| `Mod+Shift+Escape` | Hotkey overlay |
+| `Mod+Shift+Escape` / `Mod+Shift+H` | Hotkey overlay |
 | `Mod+Escape` | Desativar inibidor de atalhos |
 | `Mod+Shift+P` | Desligar monitores |
 | `Ctrl+Alt+Delete` | Sair do Niri |
