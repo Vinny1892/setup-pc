@@ -116,6 +116,9 @@
     - role: mcp
       tags: [ia]
 
+    - role: lmstudio
+      tags: [ia]
+
     - role: comfyui
       tags: [comfyui]
 
