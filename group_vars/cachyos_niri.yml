@@ -31,5 +31,10 @@ aur_packages:
   - freelens-bin
   - gearlever
   - 1password
+  - distroshelf
+  - input-remapper-bin
+  - trezor-suite-bin
+  - trezor-udev
+  - sparrow-wallet
 gamepad_packages:
   - xpadneo-dkms

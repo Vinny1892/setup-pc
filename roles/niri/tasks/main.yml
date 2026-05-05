@@ -30,6 +30,30 @@
   become: false
   tags: keybinds
 
+- name: Deploy layout.kdl
+  ansible.builtin.copy:
+    src: layout.kdl
+    dest: "{{ real_user_home }}/.config/niri/cfg/layout.kdl"
+    mode: '0644'
+  become: false
+  tags: niri
+
+- name: Create wireplumber config dir
+  ansible.builtin.file:
+    path: "{{ real_user_home }}/.config/wireplumber/wireplumber.conf.d"
+    state: directory
+    mode: '0755'
+  become: false
+  tags: audio
+
+- name: Deploy NVidia HDMI profile rule for WirePlumber
+  ansible.builtin.copy:
+    src: 51-nvidia-hdmi-profile.conf
+    dest: "{{ real_user_home }}/.config/wireplumber/wireplumber.conf.d/51-nvidia-hdmi-profile.conf"
+    mode: '0644'
+  become: false
+  tags: audio
+
 - name: Disable focus-follows-mouse in niri input config
   ansible.builtin.lineinfile:
     path: "{{ real_user_home }}/.config/niri/cfg/input.kdl"
