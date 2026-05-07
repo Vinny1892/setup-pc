@@ -8,6 +8,7 @@ extra_packages:
   - gnome-text-editor
   - niri
   - wtype
+  - cliphist
   # build deps para PHP via mise
   - base-devel
   - re2c
