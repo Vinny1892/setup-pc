@@ -38,6 +38,14 @@
   become: false
   tags: niri
 
+- name: Deploy rules.kdl
+  ansible.builtin.copy:
+    src: rules.kdl
+    dest: "{{ real_user_home }}/.config/niri/cfg/rules.kdl"
+    mode: '0644'
+  become: false
+  tags: niri
+
 - name: Create wireplumber config dir
   ansible.builtin.file:
     path: "{{ real_user_home }}/.config/wireplumber/wireplumber.conf.d"
