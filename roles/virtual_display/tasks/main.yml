@@ -1,7 +1,8 @@
 ---
 # Cria um display virtual 4K via EDID firmware + parâmetro de kernel.
-# Seguro com Secure Boot: sbctl assina apenas o vmlinuz-*, não o cmdline
-# nem o initramfs separado — nenhuma assinatura precisa ser refeita.
+# Suporta dois layouts de boot:
+#   • UKI  – default_uki ativo no preset mkinitcpio; parâmetros em /etc/kernel/cmdline
+#   • systemd-boot tradicional – parâmetros adicionados nas entradas .conf de /boot/loader/entries
 #
 # O display virtual sobe desligado por padrão (não interfere com apps).
 # Use `sunshine on` para ligar o display e iniciar o streaming.
@@ -24,9 +25,35 @@
     regexp: '^FILES='
     line: 'FILES=(/usr/lib/firmware/edid/4k.bin)'
 
-- name: Rebuild initramfs
-  ansible.builtin.command: mkinitcpio -P
-  changed_when: true
+- name: Detect active UKI preset
+  ansible.builtin.shell:
+    cmd: grep -rh '^default_uki=' /etc/mkinitcpio.d/*.preset 2>/dev/null | grep -v '^#' | head -1
+  register: virtual_display_uki_preset
+  changed_when: false
+  failed_when: false
+
+- name: Set UKI boot fact
+  ansible.builtin.set_fact:
+    virtual_display_is_uki: "{{ virtual_display_uki_preset.stdout | length > 0 }}"
+
+# ── UKI path ─────────────────────────────────────────────────────────────────
+
+- name: Remove stale video= param from UKI cmdline
+  ansible.builtin.replace:
+    path: /etc/kernel/cmdline
+    regexp: '\s*video={{ virtual_display_connector }}:[^\s]+'
+    replace: ''
+  when: virtual_display_is_uki
+
+- name: Append EDID kernel parameters to UKI cmdline
+  ansible.builtin.lineinfile:
+    path: /etc/kernel/cmdline
+    backrefs: true
+    regexp: '^((?!.*drm\.edid_firmware={{ virtual_display_connector }}).+)$'
+    line: '\1 drm.edid_firmware={{ virtual_display_connector }}:edid/4k.bin video={{ virtual_display_connector }}:e'
+  when: virtual_display_is_uki
+
+# ── systemd-boot traditional path ────────────────────────────────────────────
 
 - name: Find systemd-boot loader entry files
   ansible.builtin.find:
@@ -34,15 +61,17 @@
     patterns: "*.conf"
     file_type: file
   register: virtual_display_boot_entries
+  when: not virtual_display_is_uki
 
 - name: Replace simple video= param with EDID-based param in boot entries
   ansible.builtin.replace:
     path: "{{ item.path }}"
     regexp: '\s*video={{ virtual_display_connector }}:[^\s]+'
     replace: ''
-  loop: "{{ virtual_display_boot_entries.files }}"
+  loop: "{{ virtual_display_boot_entries.files | default([]) }}"
   loop_control:
     label: "{{ item.path }}"
+  when: not virtual_display_is_uki
 
 - name: Append EDID kernel parameters to boot entries
   ansible.builtin.lineinfile:
@@ -50,14 +79,25 @@
     backrefs: true
     regexp: '^(options (?!.*drm\.edid_firmware={{ virtual_display_connector }}).+)$'
     line: '\1 drm.edid_firmware={{ virtual_display_connector }}:edid/4k.bin video={{ virtual_display_connector }}:e'
-  loop: "{{ virtual_display_boot_entries.files }}"
+  loop: "{{ virtual_display_boot_entries.files | default([]) }}"
   loop_control:
     label: "{{ item.path }}"
+  when: not virtual_display_is_uki
+
+# ── Rebuild (common) ──────────────────────────────────────────────────────────
+
+- name: Rebuild initramfs (and UKI if applicable)
+  ansible.builtin.command: mkinitcpio -P
+  changed_when: true
+
+# ── Sunshine & compositor config ──────────────────────────────────────────────
 
 - name: Configure Sunshine to capture virtual display
   ansible.builtin.copy:
     dest: "{{ real_user_home }}/.config/sunshine/sunshine.conf"
-    content: "output_name = {{ virtual_display_connector }}\n"
+    content: |
+      output_name = {{ virtual_display_index }}
+      global_prep_cmd = [{"do":"niri msg action focus-monitor {{ virtual_display_connector }}","undo":"niri msg output {{ virtual_display_connector }} off","elevated":"false"}]
     mode: '0644'
   become: false
 
