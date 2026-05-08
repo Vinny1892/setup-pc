@@ -16,3 +16,5 @@ common_packages:
   - telegram-desktop
   - discord
   - steam
+  - zed
+  - neovim
