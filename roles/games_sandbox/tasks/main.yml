@@ -1,0 +1,174 @@
+---
+- name: Create games sandbox directory structure
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0750'
+  become: false
+  loop:
+    - "{{ games_sandbox_base_dir }}"
+    - "{{ games_sandbox_home }}"
+    - "{{ games_sandbox_base_dir }}/games"
+    - "{{ games_sandbox_base_dir }}/wine-prefixes"
+
+- name: Copy Containerfile for games-sandbox image
+  ansible.builtin.copy:
+    src: Containerfile
+    dest: "{{ games_sandbox_base_dir }}/Containerfile"
+    mode: '0644'
+  become: false
+
+- name: Check if games-sandbox image already exists
+  ansible.builtin.command:
+    cmd: podman image exists localhost/games-sandbox-image
+  become: false
+  register: _sandbox_image_exists
+  changed_when: false
+  failed_when: false
+
+- name: Build games-sandbox container image
+  ansible.builtin.command:
+    cmd: podman build -t games-sandbox-image "{{ games_sandbox_base_dir }}"
+  become: false
+  changed_when: true
+  when: _sandbox_image_exists.rc != 0
+
+- name: Check if games-sandbox distrobox already exists
+  ansible.builtin.command:
+    cmd: distrobox list
+  become: false
+  register: _distrobox_list
+  changed_when: false
+
+- name: Create games-sandbox distrobox
+  ansible.builtin.command:
+    cmd: >
+      distrobox create
+      --name {{ games_sandbox_name }}
+      --image {{ games_sandbox_image }}
+      --home {{ games_sandbox_home }}
+      --no-entry
+      --yes
+  become: false
+  changed_when: true
+  when: games_sandbox_name not in _distrobox_list.stdout
+
+- name: Deploy bubblewrap wrapper script
+  ansible.builtin.copy:
+    src: bwrap-game.sh
+    dest: "{{ games_sandbox_home }}/bwrap-game.sh"
+    mode: '0755'
+  become: false
+
+- name: Initialize games-sandbox distrobox
+  ansible.builtin.command:
+    cmd: distrobox enter {{ games_sandbox_name }} -- true
+  become: false
+  changed_when: false
+  when: games_sandbox_name not in _distrobox_list.stdout
+
+- name: Check if Heroic is already extracted
+  ansible.builtin.stat:
+    path: "{{ games_sandbox_home }}/heroic/AppRun"
+  become: false
+  register: _heroic_apprun
+
+- name: Get latest Heroic Games Launcher version
+  ansible.builtin.uri:
+    url: https://api.github.com/repos/Heroic-Games-Launcher/HeroicGamesLauncher/releases/latest
+    return_content: true
+  become: false
+  register: _heroic_release
+  changed_when: false
+  when: not _heroic_apprun.stat.exists
+
+- name: Set Heroic version fact
+  ansible.builtin.set_fact:
+    _heroic_ver: "{{ _heroic_release.json.tag_name | regex_replace('^v', '') }}"
+  become: false
+  when: not _heroic_apprun.stat.exists
+
+- name: Download Heroic AppImage
+  ansible.builtin.get_url:
+    url: "https://github.com/Heroic-Games-Launcher/HeroicGamesLauncher/releases/download/v{{ _heroic_ver }}/Heroic-{{ _heroic_ver }}-linux-x86_64.AppImage"
+    dest: "{{ games_sandbox_home }}/heroic.AppImage"
+    mode: '0755'
+  become: false
+  when: not _heroic_apprun.stat.exists
+
+- name: Extract Heroic AppImage (avoids FUSE requirement in container)
+  ansible.builtin.command:
+    cmd: "{{ games_sandbox_home }}/heroic.AppImage --appimage-extract"
+    chdir: "{{ games_sandbox_home }}"
+  become: false
+  changed_when: true
+  when: not _heroic_apprun.stat.exists
+
+- name: Rename squashfs-root to heroic
+  ansible.builtin.command:
+    cmd: mv "{{ games_sandbox_home }}/squashfs-root" "{{ games_sandbox_home }}/heroic"
+  become: false
+  changed_when: true
+  when: not _heroic_apprun.stat.exists
+
+- name: Remove Heroic AppImage after extraction
+  ansible.builtin.file:
+    path: "{{ games_sandbox_home }}/heroic.AppImage"
+    state: absent
+  become: false
+  when: not _heroic_apprun.stat.exists
+
+- name: Ensure Heroic proton tools directory exists
+  ansible.builtin.file:
+    path: "{{ games_sandbox_home }}/.config/heroic/tools/proton"
+    state: directory
+    mode: '0755'
+  become: false
+
+- name: Symlink proton-cachyos from host into Heroic tools
+  ansible.builtin.file:
+    src: "/run/host/usr/share/steam/compatibilitytools.d/{{ item }}"
+    dest: "{{ games_sandbox_home }}/.config/heroic/tools/proton/{{ item }}"
+    state: link
+    force: true
+  become: false
+  loop:
+    - proton-cachyos
+    - proton-cachyos-slr
+
+- name: Deploy Heroic launcher script
+  ansible.builtin.copy:
+    dest: "{{ games_sandbox_home }}/heroic-launch.sh"
+    mode: '0755'
+    content: |
+      #!/bin/bash
+      APPDIR="{{ games_sandbox_home }}/heroic"
+      export APPDIR
+      export LD_LIBRARY_PATH="${APPDIR}/usr/lib:${LD_LIBRARY_PATH}"
+      export XDG_DATA_DIRS="${APPDIR}/usr/share:${XDG_DATA_DIRS}:/usr/share/gnome:/usr/local/share/:/usr/share/"
+      export GSETTINGS_SCHEMA_DIR="${APPDIR}/usr/share/glib-2.0/schemas:${GSETTINGS_SCHEMA_DIR}"
+      exec "${APPDIR}/heroic" --no-sandbox "$@"
+  become: false
+
+- name: Create applications directory for desktop entry
+  ansible.builtin.file:
+    path: "{{ real_user_home }}/.local/share/applications"
+    state: directory
+    mode: '0755'
+  become: false
+
+- name: Deploy Heroic desktop entry (games-sandbox)
+  ansible.builtin.copy:
+    dest: "{{ real_user_home }}/.local/share/applications/heroic-games-sandbox.desktop"
+    mode: '0644'
+    content: |
+      [Desktop Entry]
+      Name=Heroic Games Launcher (games-sandbox)
+      Comment=Epic, GOG and Amazon Games Launcher – sandboxed via distrobox
+      Exec=distrobox enter {{ games_sandbox_name }} -- {{ games_sandbox_home }}/heroic-launch.sh %U
+      Icon={{ games_sandbox_home }}/heroic/heroic.png
+      Type=Application
+      Categories=Game;
+      StartupWMClass=heroic
+      MimeType=x-scheme-handler/heroic;
+  become: false

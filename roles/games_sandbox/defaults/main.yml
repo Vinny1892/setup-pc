@@ -1,0 +1,5 @@
+---
+games_sandbox_name: games-sandbox
+games_sandbox_image: localhost/games-sandbox-image:latest
+games_sandbox_base_dir: "{{ real_user_home }}/games-sandbox"
+games_sandbox_home: "{{ real_user_home }}/games-sandbox/home"

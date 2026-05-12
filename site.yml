@@ -133,6 +133,9 @@
       tags: [gaming]
       when: ansible_facts['distribution'] in ["Archlinux", "CachyOS"]
 
+    - role: games_sandbox
+      tags: [gaming, games_sandbox]
+
     # --- security ---
     - role: secure_boot
       tags: [security]

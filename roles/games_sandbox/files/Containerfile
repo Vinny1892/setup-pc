@@ -1,0 +1,35 @@
+FROM docker.io/cachyos/cachyos:latest
+
+# Habilita multilib (pacotes 32-bit)
+RUN sed -i '/\[multilib\]/,/Include/s/^#//' /etc/pacman.conf && \
+    pacman -Syu --noconfirm && \
+    pacman -S --noconfirm --needed \
+      bubblewrap wget curl ca-certificates \
+      mesa lib32-mesa \
+      vulkan-icd-loader lib32-vulkan-icd-loader \
+      libglvnd lib32-libglvnd \
+      libpulse lib32-libpulse \
+      pipewire \
+      ttf-liberation cabextract xdg-user-dirs fuse2 \
+      nspr nss \
+      alsa-lib lib32-alsa-lib \
+      at-spi2-atk cups \
+      libdrm lib32-libdrm \
+      gtk3 \
+      libxcomposite libxdamage libxfixes libxrandr libxss libxtst \
+    && echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen \
+    && locale-gen \
+    && rm -rf /var/cache/pacman/pkg/*
+
+# Ponto de montagem para bwrap-game.sh:
+#   --ro-bind /run/host/usr/lib /usr/lib/nvidia-host
+# Em runtime o bind substitui este dir vazio pelo /usr/lib real do host Arch,
+# fazendo o pressure-vessel encontrar os binários NVIDIA sem loop de symlink.
+RUN mkdir -p /usr/lib/nvidia-host /etc/vulkan/icd.d \
+             /usr/share/steam/compatibilitytools.d && \
+    printf '{"file_format_version":"1.0.0","ICD":{"library_path":"/usr/lib/nvidia-host/libGLX_nvidia.so.0","api_version":"1.3.0"}}' \
+      > /etc/vulkan/icd.d/nvidia_icd.json
+
+ENV LANG=en_US.UTF-8 \
+    LANGUAGE=en_US:en \
+    LC_ALL=en_US.UTF-8
