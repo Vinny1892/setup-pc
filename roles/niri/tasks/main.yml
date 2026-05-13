@@ -62,6 +62,21 @@
   become: false
   tags: audio
 
+- name: Create environment.d config dir
+  ansible.builtin.file:
+    path: "{{ real_user_home }}/.config/environment.d"
+    state: directory
+    mode: '0755'
+  become: false
+
+- name: Set Qt platform theme to follow GTK
+  ansible.builtin.copy:
+    dest: "{{ real_user_home }}/.config/environment.d/qt-theme.conf"
+    mode: '0644'
+    content: |
+      QT_QPA_PLATFORMTHEME=gnome
+  become: false
+
 - name: Disable focus-follows-mouse in niri input config
   ansible.builtin.lineinfile:
     path: "{{ real_user_home }}/.config/niri/cfg/input.kdl"
