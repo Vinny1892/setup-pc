@@ -77,9 +77,87 @@
       QT_QPA_PLATFORMTHEME=gnome
   become: false
 
-- name: Set Papirus-Dark as icon theme (gsettings)
+- name: Check if everdeer-folders icon theme needs rebuild
+  ansible.builtin.stat:
+    path: /usr/share/icons/everdeer-folders/48x48/places/inode-directory.svg
+  register: _everdeer_built
+  become: false
+
+- name: Build everdeer-folders icon theme from Papirus-Dark
+  ansible.builtin.shell: |
+    set -e
+    THEME_DIR="/usr/share/icons/everdeer-folders"
+    rm -rf "$THEME_DIR"
+    mkdir -p "$THEME_DIR"
+
+    cat > "$THEME_DIR/index.theme" << 'EOF'
+    [Icon Theme]
+    Name=Everdeer Folders
+    Comment=Papirus-Dark with Everdeer palette folder colors
+    Inherits=Papirus-Dark
+
+    Directories=16x16/places,22x22/places,24x24/places,32x32/places,48x48/places,64x64/places
+
+    [16x16/places]
+    Size=16
+    Type=Fixed
+    Context=Places
+
+    [22x22/places]
+    Size=22
+    Type=Fixed
+    Context=Places
+
+    [24x24/places]
+    Size=24
+    Type=Fixed
+    Context=Places
+
+    [32x32/places]
+    Size=32
+    Type=Fixed
+    Context=Places
+
+    [48x48/places]
+    Size=48
+    Type=Fixed
+    Context=Places
+
+    [64x64/places]
+    Size=64
+    Type=Fixed
+    Context=Places
+    EOF
+
+    for SIZE in 16x16 22x22 24x24 32x32 48x48 64x64; do
+      DEST="$THEME_DIR/$SIZE/places"
+      mkdir -p "$DEST"
+      for SRC_DIR in "/usr/share/icons/Papirus-Dark/$SIZE/places" "/usr/share/icons/Papirus/$SIZE/places"; do
+        [ -d "$SRC_DIR" ] || continue
+        find "$SRC_DIR" \( -name "folder-pink*.svg" -o -name "user-pink*.svg" \) -not -type l | while read -r f; do
+          sed -e 's/ec407a/1c110e/g' -e 's/f06292/ffb4a3/g' \
+              -e 's/4285f4/1c110e/g' -e 's/5c6bc0/ffb4a3/g' \
+              "$f" > "$DEST/$(basename "$f")"
+        done
+        find "$SRC_DIR" -maxdepth 1 -type l | while read -r link; do
+          target=$(readlink "$link")
+          [[ "$target" == *pink* ]] || continue
+          cp -f "$(readlink -f "$link")" "$DEST/$(basename "$link")" 2>/dev/null || true
+        done
+      done
+      # Garante folder.svg e inode-directory.svg como arquivos reais
+      [ -f "$DEST/folder-pink.svg" ] && cp "$DEST/folder-pink.svg" "$DEST/folder.svg"
+      [ -f "$DEST/folder.svg" ] && cp "$DEST/folder.svg" "$DEST/inode-directory.svg"
+    done
+
+    gtk-update-icon-cache "$THEME_DIR"
+  become: true
+  when: not _everdeer_built.stat.exists
+  changed_when: true
+
+- name: Set everdeer-folders as icon theme (gsettings)
   ansible.builtin.command:
-    cmd: gsettings set org.gnome.desktop.interface icon-theme 'Papirus-Dark'
+    cmd: gsettings set org.gnome.desktop.interface icon-theme 'everdeer-folders'
   become: false
   changed_when: false
 
@@ -89,33 +167,14 @@
   become: false
   changed_when: false
 
-- name: Set Papirus-Dark as icon theme for KDE apps (kdeglobals)
+- name: Set everdeer-folders as icon theme for KDE apps (kdeglobals)
   ansible.builtin.copy:
     dest: "{{ real_user_home }}/.config/kdeglobals"
     mode: '0644'
     content: |
       [Icons]
-      Theme=Papirus-Dark
+      Theme=everdeer-folders
   become: false
-
-- name: Check if Papirus folder icons still have original pink color
-  ansible.builtin.command:
-    cmd: grep -rl "ec407a" /usr/share/icons/Papirus/48x48/places/folder-pink.svg
-  register: _papirus_color_check
-  changed_when: false
-  failed_when: false
-  become: false
-
-- name: Recolor Papirus folder icons to match niri Everdeer palette
-  ansible.builtin.shell: |
-    find /usr/share/icons/Papirus /usr/share/icons/Papirus-Dark \
-      \( -name "folder-pink*.svg" -o -name "user-pink*.svg" \) -not -type l \
-      -exec sed -i -e 's/ec407a/1c110e/g' -e 's/f06292/ffb4a3/g' {} \;
-    gtk-update-icon-cache /usr/share/icons/Papirus
-    gtk-update-icon-cache /usr/share/icons/Papirus-Dark
-  become: true
-  when: _papirus_color_check.rc == 0
-  changed_when: true
 
 - name: Disable focus-follows-mouse in niri input config
   ansible.builtin.lineinfile:
