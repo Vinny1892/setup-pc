@@ -4,6 +4,7 @@ pkg_manager: pacman
 aur_helper: paru
 
 extra_packages:
+  - dolphin
   - evince
   - gnome-text-editor
   - niri
