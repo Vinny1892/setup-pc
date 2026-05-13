@@ -22,6 +22,27 @@
     mode: '0644'
   become: false
 
+- name: Deploy noctalia plugins.json
+  ansible.builtin.copy:
+    src: noctalia-plugins.json
+    dest: "{{ real_user_home }}/.config/noctalia/plugins.json"
+    mode: '0644'
+  become: false
+
+- name: Create noctalia Everdeer colorscheme dir
+  ansible.builtin.file:
+    path: "{{ real_user_home }}/.config/noctalia/colorschemes/Everdeer"
+    state: directory
+    mode: '0755'
+  become: false
+
+- name: Deploy noctalia Everdeer colorscheme
+  ansible.builtin.copy:
+    src: noctalia-everdeer.json
+    dest: "{{ real_user_home }}/.config/noctalia/colorschemes/Everdeer/Everdeer.json"
+    mode: '0644'
+  become: false
+
 - name: Deploy custom keybinds.kdl
   ansible.builtin.copy:
     src: keybinds.kdl
@@ -69,13 +90,55 @@
     mode: '0755'
   become: false
 
-- name: Set Qt platform theme to follow GTK
+- name: Set Qt theme environment
   ansible.builtin.copy:
     dest: "{{ real_user_home }}/.config/environment.d/qt-theme.conf"
     mode: '0644'
     content: |
-      QT_QPA_PLATFORMTHEME=gnome
+      QT_QPA_PLATFORMTHEME=gtk3
+      QT_STYLE_OVERRIDE=Fusion
   become: false
+
+- name: Create user GTK3 config dir
+  ansible.builtin.file:
+    path: "{{ real_user_home }}/.config/gtk-3.0"
+    state: directory
+    mode: '0755'
+  become: false
+
+- name: Deploy user GTK3 CSS with Everdeer accent color
+  ansible.builtin.copy:
+    dest: "{{ real_user_home }}/.config/gtk-3.0/gtk.css"
+    mode: '0644'
+    content: |
+      @define-color theme_selected_bg_color #ffb4a3;
+      @define-color theme_selected_fg_color #621000;
+  become: false
+
+- name: Create root GTK3 config dir
+  ansible.builtin.file:
+    path: /root/.config/gtk-3.0
+    state: directory
+    mode: '0755'
+  become: true
+
+- name: Set dark mode for root GTK3 (btrfs-assistant via pkexec reads this)
+  ansible.builtin.copy:
+    dest: /root/.config/gtk-3.0/settings.ini
+    mode: '0644'
+    content: |
+      [Settings]
+      gtk-application-prefer-dark-theme=1
+  become: true
+
+- name: Deploy root GTK3 CSS with Everdeer accent color
+  ansible.builtin.copy:
+    dest: /root/.config/gtk-3.0/gtk.css
+    mode: '0644'
+    content: |
+      @define-color theme_selected_bg_color #ffb4a3;
+      @define-color theme_selected_fg_color #621000;
+  become: true
 
 - name: Check if everdeer-folders icon theme needs rebuild
   ansible.builtin.stat:
