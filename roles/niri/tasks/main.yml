@@ -77,6 +77,46 @@
       QT_QPA_PLATFORMTHEME=gnome
   become: false
 
+- name: Set Papirus-Dark as icon theme (gsettings)
+  ansible.builtin.command:
+    cmd: gsettings set org.gnome.desktop.interface icon-theme 'Papirus-Dark'
+  become: false
+  changed_when: false
+
+- name: Set GTK accent color to match niri theme
+  ansible.builtin.command:
+    cmd: gsettings set org.gnome.desktop.interface accent-color 'pink'
+  become: false
+  changed_when: false
+
+- name: Set Papirus-Dark as icon theme for KDE apps (kdeglobals)
+  ansible.builtin.copy:
+    dest: "{{ real_user_home }}/.config/kdeglobals"
+    mode: '0644'
+    content: |
+      [Icons]
+      Theme=Papirus-Dark
+  become: false
+
+- name: Check if Papirus folder icons still have original pink color
+  ansible.builtin.command:
+    cmd: grep -rl "ec407a" /usr/share/icons/Papirus/48x48/places/folder-pink.svg
+  register: _papirus_color_check
+  changed_when: false
+  failed_when: false
+  become: false
+
+- name: Recolor Papirus folder icons to match niri Everdeer palette
+  ansible.builtin.shell: |
+    find /usr/share/icons/Papirus /usr/share/icons/Papirus-Dark \
+      \( -name "folder-pink*.svg" -o -name "user-pink*.svg" \) -not -type l \
+      -exec sed -i -e 's/ec407a/1c110e/g' -e 's/f06292/ffb4a3/g' {} \;
+    gtk-update-icon-cache /usr/share/icons/Papirus
+    gtk-update-icon-cache /usr/share/icons/Papirus-Dark
+  become: true
+  when: _papirus_color_check.rc == 0
+  changed_when: true
+
 - name: Disable focus-follows-mouse in niri input config
   ansible.builtin.lineinfile:
     path: "{{ real_user_home }}/.config/niri/cfg/input.kdl"

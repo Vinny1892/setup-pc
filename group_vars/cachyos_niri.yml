@@ -5,6 +5,7 @@ aur_helper: paru
 
 extra_packages:
   - dolphin
+  - papirus-icon-theme
   - qgnomeplatform-qt6
   - qgnomeplatform-qt5
   - evince
