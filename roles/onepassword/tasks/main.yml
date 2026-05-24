@@ -20,10 +20,21 @@
   changed_when: true
   when: pkg_manager == "apt"
 
+- name: Remove legacy 1Password .list (replaced by deb822 .sources)
+  ansible.builtin.file:
+    path: /etc/apt/sources.list.d/1password.list
+    state: absent
+  when: pkg_manager == "apt"
+
 - name: Add 1Password apt repo (Ubuntu/Debian)
-  ansible.builtin.apt_repository:
-    repo: "deb [arch=amd64 signed-by=/usr/share/keyrings/1password-archive-keyring.gpg] https://downloads.1password.com/linux/debian/amd64 stable main"
-    filename: 1password
+  ansible.builtin.deb822_repository:
+    name: 1password
+    types: deb
+    uris: https://downloads.1password.com/linux/debian/amd64
+    suites: stable
+    components: main
+    architectures: amd64
+    signed_by: /usr/share/keyrings/1password-archive-keyring.gpg
     state: present
   when: pkg_manager == "apt"
 

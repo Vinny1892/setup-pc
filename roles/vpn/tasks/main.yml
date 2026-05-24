@@ -39,12 +39,21 @@
   changed_when: true
   when: pkg_manager == "apt"
 
+- name: Remove legacy Cloudflare WARP .list (replaced by deb822 .sources)
+  ansible.builtin.file:
+    path: /etc/apt/sources.list.d/cloudflare-client.list
+    state: absent
+  when: pkg_manager == "apt"
+
 - name: Add Cloudflare WARP apt repository
-  ansible.builtin.apt_repository:
-    repo: >-
-      deb [arch=amd64 signed-by=/usr/share/keyrings/cloudflare-warp-archive-keyring.gpg]
-      https://pkg.cloudflareclient.com/ {{ ansible_distribution_release }} main
-    filename: cloudflare-client
+  ansible.builtin.deb822_repository:
+    name: cloudflare-client
+    types: deb
+    uris: https://pkg.cloudflareclient.com/
+    suites: "{{ ansible_distribution_release }}"
+    components: main
+    architectures: amd64
+    signed_by: /usr/share/keyrings/cloudflare-warp-archive-keyring.gpg
     state: present
   when: pkg_manager == "apt"
 
