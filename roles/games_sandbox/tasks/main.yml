@@ -71,6 +71,19 @@
     mode: '0755'
   become: false
 
+# Host-side wrapper used by Steam Non-Steam shortcuts created by Heroic
+# inside the sandbox. Steam runs on the host and needs to enter distrobox
+# and call heroic-launch.sh (which sets the AppImage env vars); calling
+# the heroic binary directly leaves Wayland/GTK paths unset and the game
+# window ends up invisible. Also strips --no-gui / --no-sandbox that
+# Heroic embeds in the shortcut LaunchOptions.
+- name: Deploy host-side Heroic wrapper for Steam shortcuts
+  ansible.builtin.copy:
+    src: heroic-from-steam.sh
+    dest: "{{ games_sandbox_base_dir }}/heroic-from-steam.sh"
+    mode: '0755'
+  become: false
+
 - name: Initialize games-sandbox distrobox
   ansible.builtin.command:
     cmd: distrobox enter {{ games_sandbox_name }} -- true
