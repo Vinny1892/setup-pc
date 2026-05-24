@@ -40,6 +40,16 @@
   register: _distrobox_list
   changed_when: false
 
+# Pre-create the .steam/steam/ skeleton so the userdata bind mount has a parent.
+# Only userdata/ is exposed from the host — not the rest of ~/.steam or ~/.local/share/Steam.
+# This is the minimum needed for Heroic's "Add to Steam" (writes shortcuts.vdf).
+- name: Pre-create Steam userdata bind target dir
+  ansible.builtin.file:
+    path: "{{ games_sandbox_home }}/.steam/steam"
+    state: directory
+    mode: '0755'
+  become: false
+
 - name: Create games-sandbox distrobox
   ansible.builtin.command:
     cmd: >
@@ -47,6 +57,7 @@
       --name {{ games_sandbox_name }}
       --image {{ games_sandbox_image }}
       --home {{ games_sandbox_home }}
+      --volume {{ real_user_home }}/.local/share/Steam/userdata:{{ games_sandbox_home }}/.steam/steam/userdata:rw
       --no-entry
       --yes
   become: false
