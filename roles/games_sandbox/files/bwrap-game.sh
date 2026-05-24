@@ -74,6 +74,10 @@ BWRAP_ARGS=(
   --dev /dev
   --dev-bind /dev/dri /dev/dri
 
+  # /dev/input para gamepads/joysticks (--dev cria tmpfs mínimo sem input devices).
+  --dev-bind-try /dev/input /dev/input
+  --ro-bind-try /run/udev /run/udev
+
   # NVIDIA — devices proprietários necessários para Vulkan/OpenGL
   --dev-bind-try /dev/nvidia0          /dev/nvidia0
   --dev-bind-try /dev/nvidiactl        /dev/nvidiactl
