@@ -103,6 +103,67 @@
     SUDO_ASKPASS: /tmp/ansible-askpass.sh
   when: pkg_manager == "pacman"
 
+# SteamTinkerLaunch — Steam compat tool that auto-wraps every game in gamescope.
+# After install, enable globally in Steam: Settings → Compatibility →
+# "Run other titles with" → Steam Tinker Launch. Reason: niri doesn't render
+# off-screen/inactive-workspace windows, which freezes fullscreen games when
+# the user moves them to another workspace. Gamescope's nested compositor
+# isolates the game so it keeps rendering regardless of workspace visibility.
+- name: Install SteamTinkerLaunch via AUR
+  kewlfft.aur.aur:
+    name: steamtinkerlaunch
+    use: paru
+    state: present
+  become: false
+  environment:
+    SUDO_ASKPASS: /tmp/ansible-askpass.sh
+  when: pkg_manager == "pacman"
+
+- name: Check if Steam data dir exists for compat-tool registration
+  ansible.builtin.stat:
+    path: "{{ real_user_home }}/.steam/root/compatibilitytools.d"
+  register: steam_compat_dir
+  become: false
+  when: pkg_manager == "pacman"
+
+- name: Register SteamTinkerLaunch as Steam compatibility tool
+  ansible.builtin.command:
+    cmd: steamtinkerlaunch compat add
+    creates: "{{ real_user_home }}/.steam/root/compatibilitytools.d/SteamTinkerLaunch"
+  become: false
+  when:
+    - pkg_manager == "pacman"
+    - steam_compat_dir.stat.exists
+
+# Enforce specific STL settings without clobbering the rest of the template
+# that STL expands on first run. global.conf and default_template.conf are
+# created by `steamtinkerlaunch compat add`; we only override targeted keys.
+- name: Enforce SteamTinkerLaunch global settings (gamescope, mangohud)
+  ansible.builtin.lineinfile:
+    path: "{{ real_user_home }}/.config/steamtinkerlaunch/global.conf"
+    regexp: "^{{ item.key }}="
+    line: '{{ item.key }}="{{ item.value }}"'
+    create: false
+  become: false
+  loop:
+    - { key: USEGAMESCOPE, value: "1" }
+    - { key: GAMESCOPE_ARGS, value: "-f --force-grab-cursor --backend sdl --adaptive-sync" }
+    - { key: USEMANGOHUD, value: "1" }
+  when:
+    - pkg_manager == "pacman"
+    - steam_compat_dir.stat.exists
+
+- name: Set default Proton to CachyOS build for new games
+  ansible.builtin.lineinfile:
+    path: "{{ real_user_home }}/.config/steamtinkerlaunch/default_template.conf"
+    regexp: "^USEPROTON="
+    line: 'USEPROTON="proton-cachyos"'
+    create: false
+  become: false
+  when:
+    - pkg_manager == "pacman"
+    - steam_compat_dir.stat.exists
+
 - name: Download Heroic Games Launcher .deb
   ansible.builtin.get_url:
     url: "https://github.com/Heroic-Games-Launcher/HeroicGamesLauncher/releases/download/v{{ gaming_heroic_version }}/heroic_{{ gaming_heroic_version }}_amd64.deb"
